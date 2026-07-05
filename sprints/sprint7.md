@@ -17,14 +17,22 @@ simplified. Spec Phase 7 (§24), pretty details §15.5, secular/appearance setti
 ## Tasks
 
 ### Deferred from Sprint 6 (do these first — they unblock real usage)
-- [ ] `frontend/ui/text_input.py` — a simple focusable text field widget (caret, backspace,
-      max length, click-to-focus). Reuse the KEYDOWN handling pattern from onboarding.py.
-- [ ] Record scene: add optional quantity field + reflection field (text_input) + a "dedicate
-      after saving" toggle that, on save, routes to DedicationScene with the new entry_id.
-- [ ] Repentance scene: add optional non-secret reflection + repair-intention text fields
-      (keep the privacy reminder prominent; still no who/what/where fields).
-- [ ] Dedication scene: custom target field + editable dedication text + points field; allow
-      linking to the most recent entry (source_entry_id).
+- [x] `frontend/ui/text_input.py` — DONE (built early to fix un-editable vows). Focusable single-
+      line field: click-to-focus, caret blink (needs `update(dt)`), backspace, max_length, Enter/Esc
+      to blur. Tested in tests/test_text_input.py. Reuse it for the remaining text fields below.
+- [x] Vow editing — DONE. VowDetailScene now has an editable name field + points field + Save
+      (PUT /vows/{id} via api_client.update_vow). Creating a vow from VowsScene opens its detail
+      scene immediately so you name it (no more 5 identical "New commitment" vows). Vows list shows
+      points. Covered by test_scenes.py::test_vow_detail_edits_name_and_points + create-opens-detail.
+- [x] Record scene — DONE. Two-column: template picker (left) + quantity field + reflection
+      field + "Dedicate after: on/off" toggle + Record (right). On save with the toggle on it
+      routes to DedicationScene(source_entry_id=...). Tests in test_scenes.py.
+- [x] Repentance scene — DONE. Category buttons now *select* (highlighted ring); added optional
+      reflection + repair-intention TextInputs + a "Return to practice" save button. Privacy
+      reminder still prominent; still no who/what/where fields. Tests cover fields + require-category.
+- [x] Dedication scene — DONE. Preset picker fills an editable target field; editable dedication
+      text + points fields; Save. Accepts source_entry_id (links the dedication onto that entry).
+      Tests cover custom target/text/points + source-entry linking.
 - [ ] Settings scene: checkbox/toggle widget for points_mode (cycle), negative_points_enabled,
       reduced_motion, high_contrast, sound_enabled → put_settings. Data section: export JSON +
       Markdown to the data dir (show the path + the §19.3 privacy warning), and import from a

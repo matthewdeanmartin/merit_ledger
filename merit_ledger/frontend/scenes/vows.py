@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 from functools import partial
 from typing import Any
 
@@ -60,11 +59,14 @@ class VowsScene(MainScene):
         self.app.switch_to(VowDetailScene(self.app, vow_id))
 
     def _create(self, vow_type: str) -> None:
-        """Create a starter vow of the given type and refresh."""
+        """Create a starter vow, then open its detail scene so the user can name it."""
         name = "New commitment" if vow_type == "positive" else "New restraint"
-        with contextlib.suppress(Exception):
-            self.app.api.create_vow({"name": name, "vow_type": vow_type})
-        self.on_enter()
+        try:
+            vow = self.app.api.create_vow({"name": name, "vow_type": vow_type})
+        except Exception:
+            self.on_enter()
+            return
+        self._open(vow["vow_id"])
 
     def handle_body_event(self, event: pygame.event.Event) -> None:
         """Forward events to row + create buttons."""
@@ -86,8 +88,9 @@ class VowsScene(MainScene):
             status = vow.get("status", "")
             label = "repair available" if status == "repair_in_progress" else status
             text_ui.draw_text(surface, label, (300, y + 14), 20, p.text_muted)
+            text_ui.draw_text(surface, f"{vow.get('default_points', 0)} pts", (420, y + 14), 20, p.text_muted)
             if vow.get("streak"):
-                text_ui.draw_text(surface, f"streak {vow['streak']}", (440, y + 14), 20, p.accent)
+                text_ui.draw_text(surface, f"streak {vow['streak']}", (500, y + 14), 20, p.accent)
             y += 54
         for b in self._row_buttons + self._create_buttons:
             b.draw(surface, p)

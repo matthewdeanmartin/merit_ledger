@@ -67,9 +67,37 @@ def test_record_scene_creates_entry(app: PygameApp) -> None:
     scene = RecordPracticeScene(app)
     scene.on_enter()
     assert scene._templates  # secular templates loaded
-    scene._record(scene._templates[0])
+    scene._select(scene._templates[0])
+    assert scene._quantity is not None and scene._reflection is not None
+    scene._reflection.text = "returned to the breath"
+    scene._record()
     assert "Recorded" in scene._message
-    assert app.api.list_entries()  # persisted
+    entries = app.api.list_entries()
+    assert entries and entries[0]["reflection"] == "returned to the breath"
+
+
+def test_record_requires_selection(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.record_practice import RecordPracticeScene
+
+    scene = RecordPracticeScene(app)
+    scene.on_enter()
+    scene._record()  # nothing selected
+    assert "Pick a practice" in scene._message
+    assert app.api.list_entries() == []
+
+
+def test_record_dedicate_after_routes(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.dedication import DedicationScene
+    from merit_ledger.frontend.scenes.record_practice import RecordPracticeScene
+
+    scene = RecordPracticeScene(app)
+    scene.on_enter()
+    scene._select(scene._templates[0])
+    scene._toggle_dedicate()
+    assert scene._dedicate_after is True
+    scene._record()
+    assert isinstance(app._scene, DedicationScene)
+    assert app._scene.source_entry_id is not None
 
 
 def test_vows_scene_create_and_open(app: PygameApp) -> None:
@@ -79,6 +107,33 @@ def test_vows_scene_create_and_open(app: PygameApp) -> None:
     scene.on_enter()
     scene._create("positive")
     assert len(app.api.list_vows()) == 1
+
+
+def test_vow_detail_edits_name_and_points(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.vow_detail import VowDetailScene
+
+    vow = app.api.create_vow({"name": "New commitment", "vow_type": "positive", "default_points": 10})
+    detail = VowDetailScene(app, vow["vow_id"])
+    detail.on_enter()
+    # user renames it and changes the points, then saves
+    assert detail._name_field is not None and detail._points_field is not None
+    detail._name_field.text = "Sit zazen 20 min"
+    detail._points_field.text = "7"
+    detail._save_edits()
+    updated = app.api.get_vow(vow["vow_id"])
+    assert updated["name"] == "Sit zazen 20 min"
+    assert updated["default_points"] == 7
+
+
+def test_vows_create_opens_detail_for_naming(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.vow_detail import VowDetailScene
+    from merit_ledger.frontend.scenes.vows import VowsScene
+
+    scene = VowsScene(app)
+    scene.on_enter()
+    scene._create("positive")
+    # creating a vow drops you straight into its detail scene to name it
+    assert isinstance(app._scene, VowDetailScene)
 
 
 def test_breach_routes_to_repentance_with_prefill(app: PygameApp) -> None:
@@ -95,6 +150,59 @@ def test_breach_routes_to_repentance_with_prefill(app: PygameApp) -> None:
     assert isinstance(scene, RepentanceScene)
     assert scene.linked_vow_id == vow["vow_id"]
     assert scene.category == "speech"
+
+
+def test_repentance_saves_with_reflection_and_intention(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.repentance import RepentanceScene
+
+    scene = RepentanceScene(app)
+    scene.on_enter()
+    scene._pick("anger")
+    assert scene._reflection is not None and scene._intention is not None
+    scene._reflection.text = "noticed heat, breathed"
+    scene._intention.text = "pause before replying"
+    scene._save()
+    entries = [e for e in app.api.list_entries() if e["entry_type"] == "repentance_completed"]
+    assert entries and entries[0]["category"] == "anger"
+    assert entries[0]["reflection"] == "noticed heat, breathed"
+    assert entries[0]["repair_intention"] == "pause before replying"
+
+
+def test_repentance_requires_category(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.repentance import RepentanceScene
+
+    scene = RepentanceScene(app)
+    scene.on_enter()
+    scene._save()  # no category picked
+    assert "category" in scene._message.lower()
+
+
+def test_dedication_custom_target_and_text(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.dedication import DedicationScene
+
+    scene = DedicationScene(app)
+    scene.on_enter()
+    assert scene._target_field is not None and scene._text_field is not None
+    scene._target_field.text = "My grandmother"
+    scene._text_field.text = "May she be at peace."
+    scene._points_field.text = "5"
+    scene._save()
+    dedications = app.api.list_dedications()
+    assert dedications
+    assert dedications[0]["target_name"] == "My grandmother"
+    assert dedications[0]["points_dedicated"] == 5
+
+
+def test_dedication_links_to_source_entry(app: PygameApp) -> None:
+    from merit_ledger.frontend.scenes.dedication import DedicationScene
+
+    entry = app.api.create_entry({"template_id": "secular.help", "title": "Helped"})
+    scene = DedicationScene(app, source_entry_id=entry["entry_id"])
+    scene.on_enter()
+    scene._save()
+    updated = app.api.list_entries()
+    linked = [e for e in updated if e["entry_id"] == entry["entry_id"]][0]
+    assert linked["dedication_id"] is not None
 
 
 def test_mudita_rejoice_creates_entry(app: PygameApp) -> None:

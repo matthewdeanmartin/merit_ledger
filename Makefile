@@ -14,6 +14,7 @@ ABOUT_FILE := merit_ledger/__about__.py
 .PHONY: \
 	sync \
 	pre-commit-install \
+	run backend backend-dev where-data print-url \
 	format format-python format-yaml format-markdown \
 	format-check format-check-python format-check-yaml format-check-markdown \
 	lint lint-check ruff-fix ruff-check pylint pylint-tests pylint-spelling \
@@ -35,6 +36,12 @@ help:
 	@echo "Targets:"
 	@echo "  sync                   Install / refresh dependencies"
 	@echo "  pre-commit-install     Install pre-commit hooks into .git/hooks"
+	@echo ""
+	@echo "  run                    Launch the desktop app (backend + Pygame window)"
+	@echo "  backend                Start the backend only (no window), wait for /health, exit"
+	@echo "  backend-dev            Run the FastAPI backend with autoreload (dev, Ctrl-C to stop)"
+	@echo "  where-data             Print the local data directory + SQLite db path"
+	@echo "  print-url              Print the local backend URL"
 	@echo ""
 	@echo "  format                 Auto-format all code and markup"
 	@echo "  format-check           Check formatting without changes"
@@ -86,6 +93,30 @@ sync:
 
 pre-commit-install:
 	@$(UV) run pre-commit install
+
+# ── Run the app ───────────────────────────────────────────────────────────────
+# `make run` is the one you want: it starts the local FastAPI backend and opens the
+# Pygame window. Everything is local — no account, no network, no cloud.
+
+run:
+	@$(UV) run merit_ledger
+
+# Backend only: starts the API, waits for /health, then exits. Useful to confirm the
+# server boots without opening a window (also what CI can smoke-test).
+backend:
+	@$(UV) run merit_ledger --backend-only
+
+# Backend with autoreload for development. Serves http://127.0.0.1:8765 until Ctrl-C.
+# Explore the API at http://127.0.0.1:8765/docs (FastAPI's built-in Swagger UI).
+backend-dev:
+	@$(UV) run uvicorn merit_ledger.backend.main:app --host 127.0.0.1 --port 8765 --reload
+
+# Show where your ledger lives on disk (created on first run).
+where-data:
+	@$(UV) run python -c "from merit_ledger.local.data_dir import data_dir, db_path; print('data dir:', data_dir()); print('database:', db_path())"
+
+print-url:
+	@$(UV) run python -c "from merit_ledger.local.config import BACKEND_URL; print(BACKEND_URL)"
 
 # ── Formatting ────────────────────────────────────────────────────────────────
 

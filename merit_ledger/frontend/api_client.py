@@ -90,6 +90,10 @@ class ApiClient:
         """Create a vow."""
         return self._post("/vows", vow)
 
+    def update_vow(self, vow_id: str, vow: dict[str, Any]) -> dict[str, Any]:
+        """Update a vow's editable fields (name/description/points/etc)."""
+        return self._put(f"/vows/{vow_id}", vow)
+
     def vow_action(self, vow_id: str, action: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
         """Run a vow lifecycle action: pause/resume/retire/complete/breach."""
         return self._post(f"/vows/{vow_id}/{action}", body or {})
