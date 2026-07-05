@@ -49,4 +49,32 @@ After finishing a sprint, the *next* sprint's file is always written out so any 
   (profile, settings, traditions, templates, entries, export/json) wired into create_app.
   Fixed SqliteMeritRepository for FastAPI threadpool (check_same_thread=False + lock).
   50 tests + hypothesis props green; mypy clean (36 files).
-- Sprint 3: not started — see sprints/sprint3.md. (Vows.)
+- Sprint 3: ✅ done (2026-07-05) — Vow model, pure vow_state machine (transition table +
+  IllegalVowTransition), vow item_keys (GSI1 by status), vow_service (create/complete/breach/
+  pause/resume/retire, streak, timeline via entry vow_id filter), vows API wired in (409 on
+  illegal transitions). 68 tests + mypy clean (39 files). Verified breach→repair_in_progress e2e.
+- Sprint 4: ✅ done (2026-07-05) — Repentance (categories + create, privacy reminder),
+  Dedication (model, presets w/ secular relabel, links back to source entry), Mudita garden
+  (sample feed + rejoice, tradition verb, no network), Stats (pure aggregation + today/week/
+  month/by-template/by-tradition/vows), Markdown export + JSON import (roundtrips). All routers
+  wired. 88 tests + mypy clean (48 files). Verified full flow e2e on SQLite. **Backend surface
+  complete.**
+- Sprint 5: ✅ done (2026-07-05) — Pygame shell. pygame-ce added; server_process (in-process
+  uvicorn thread + wait_for_health); app.py launcher wired to CLI (`uv run merit_ledger`,
+  `--backend-only`); api_client (thin httpx view layer); theme.py (5 tradition palettes, pure);
+  ui primitives (text/cards/buttons); pygame_app scene framework; splash→onboarding→dashboard
+  with tab nav stubs; `onboarded` flag added to Settings. 97 tests (+1 integration) + mypy clean
+  (59 files). Verified: window launches, onboarding persists, dashboard shows today's total; also
+  verified headless render smoke + real backend boot on a thread.
+- Sprint 6: not started — see sprints/sprint6.md. (Pygame core screens.)
+
+## Later / candidate sprints (not yet numbered)
+
+- **Turso/libSQL storage.** User wants to swap SQLite for Turso (libSQL) — motivated by the
+  cross-thread SQLite pain (worked around with check_same_thread=False + lock). Add a
+  `TursoMeritRepository` behind the existing `MeritRepository` interface; domain/services untouched.
+  Not scheduled yet; keep building on SQLite "in the mean whiles."
+
+## Working agreement
+
+- **Git is the user's job.** Do NOT branch or commit. Leave the tree dirty for their review.

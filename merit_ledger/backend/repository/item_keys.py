@@ -7,7 +7,14 @@ the domain model from a stored row.
 
 from __future__ import annotations
 
-from merit_ledger.backend.domain.models import LedgerEntry, PracticeTemplate, Profile, Settings
+from merit_ledger.backend.domain.models import (
+    Dedication,
+    LedgerEntry,
+    PracticeTemplate,
+    Profile,
+    Settings,
+    Vow,
+)
 from merit_ledger.backend.repository.base import MeritItem
 
 
@@ -117,3 +124,65 @@ def entry_from_item(item: MeritItem) -> LedgerEntry:
 def entry_type_gsi1pk(user_id: str, entry_type: str) -> str:
     """GSI1 partition for entries of a given type."""
     return f"{user_pk(user_id)}#ENTRY_TYPE#{entry_type}"
+
+
+# --- vows --------------------------------------------------------------------
+
+VOW_SK_PREFIX = "VOW#"
+
+
+def vow_sk(vow_id: str) -> str:
+    """Sort key for a vow: ``VOW#<vow_id>`` (spec §13.3)."""
+    return f"{VOW_SK_PREFIX}{vow_id}"
+
+
+def vow_status_gsi1pk(user_id: str, status: str) -> str:
+    """GSI1 partition for vows in a given status (spec §13.3 'Vows by status')."""
+    return f"{user_pk(user_id)}#VOW_STATUS#{status}"
+
+
+def to_vow_item(vow: Vow) -> MeritItem:
+    """Serialize a Vow with a GSI1 status key so status queries work."""
+    sk = vow_sk(vow.vow_id)
+    return MeritItem(
+        pk=user_pk(vow.user_id),
+        sk=sk,
+        entity_type="VOW",
+        gsi1pk=vow_status_gsi1pk(vow.user_id, vow.status),
+        gsi1sk=sk,
+        item=vow.model_dump(),
+        created_at=vow.created_at,
+        updated_at=vow.updated_at,
+    )
+
+
+def vow_from_item(item: MeritItem) -> Vow:
+    """Rebuild a Vow from a stored item."""
+    return Vow.model_validate(item.item)
+
+
+# --- dedications -------------------------------------------------------------
+
+DEDICATION_SK_PREFIX = "DEDICATION#"
+
+
+def dedication_sk(dedication: Dedication) -> str:
+    """Sort key: ``DEDICATION#<created_at>#<dedication_id>`` (spec §13.3)."""
+    return f"{DEDICATION_SK_PREFIX}{dedication.created_at}#{dedication.dedication_id}"
+
+
+def to_dedication_item(dedication: Dedication) -> MeritItem:
+    """Serialize a Dedication."""
+    return MeritItem(
+        pk=user_pk(dedication.user_id),
+        sk=dedication_sk(dedication),
+        entity_type="DEDICATION",
+        item=dedication.model_dump(),
+        created_at=dedication.created_at,
+        updated_at=dedication.created_at,
+    )
+
+
+def dedication_from_item(item: MeritItem) -> Dedication:
+    """Rebuild a Dedication from a stored item."""
+    return Dedication.model_validate(item.item)

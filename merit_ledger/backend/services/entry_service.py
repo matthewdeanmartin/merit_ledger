@@ -98,15 +98,23 @@ def list_entries(
     *,
     date_prefix: str | None = None,
     entry_type: str | None = None,
+    vow_id: str | None = None,
     user_id: str = DEFAULT_USER_ID,
 ) -> list[LedgerEntry]:
-    """List entries, optionally filtered by date prefix or by entry type (GSI1)."""
+    """List entries, optionally filtered by date prefix, entry type (GSI1), or vow.
+
+    ``vow_id`` matches entries whose ``vow_id`` or ``linked_vow_id`` is that vow, giving a
+    vow's full timeline (creation, completions, breaches, pause/resume/retire).
+    """
     if entry_type is not None:
         items = repo.query_gsi1(entry_type_gsi1pk(user_id, entry_type))
     else:
         sk_prefix = f"{ENTRY_SK_PREFIX}{date_prefix}" if date_prefix else ENTRY_SK_PREFIX
         items = repo.query_pk(user_pk(user_id), sk_prefix)
-    return [entry_from_item(i) for i in items]
+    entries = [entry_from_item(i) for i in items]
+    if vow_id is not None:
+        entries = [e for e in entries if vow_id in (e.vow_id, e.linked_vow_id)]
+    return entries
 
 
 def update_entry(repo: MeritRepository, entry: LedgerEntry) -> LedgerEntry:

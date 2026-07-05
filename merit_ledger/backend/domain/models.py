@@ -56,6 +56,19 @@ RepentanceCategory = Literal[
     "general",
 ]
 
+VowType = Literal["positive", "negative"]
+
+VowStrength = Literal["aspiration", "training_commitment", "formal_vow", "experiment"]
+
+VowStatus = Literal[
+    "draft",
+    "active",
+    "paused",
+    "repair_in_progress",
+    "completed",
+    "retired",
+]
+
 DedicationTarget = Literal[
     "all_beings",
     "person",
@@ -141,4 +154,51 @@ class Settings(BaseModel):
     font_scale: float = 1.0
     hide_reflections_in_stats: bool = False
     confirm_before_export: bool = True
+    onboarded: bool = False
+    updated_at: str = Field(default_factory=now_iso)
+
+
+class Dedication(BaseModel):
+    """A dedication of merit/practice (spec §11).
+
+    By default a dedication records — it does not subtract points from any balance
+    (spec §5.8); the MVP has no persistent balance entity.
+    """
+
+    dedication_id: str = Field(default_factory=lambda: new_id("dedication"))
+    user_id: str = "local_user"
+    source_entry_id: str | None = None
+    target_type: DedicationTarget = "all_beings"
+    target_name: str = "All sentient beings"
+    dedication_text: str = ""
+    points_dedicated: int = 0
+    created_at: str = Field(default_factory=now_iso)
+
+
+class Vow(BaseModel):
+    """A user commitment (spec §8).
+
+    Positive vows are completed (earning points + a streak); negative vows are breached,
+    which moves them to ``repair_in_progress`` without any shame score.
+    """
+
+    vow_id: str = Field(default_factory=lambda: new_id("vow"))
+    user_id: str = "local_user"
+    name: str = ""
+    description: str = ""
+    vow_type: VowType = "positive"
+    strength: VowStrength = "training_commitment"
+    status: VowStatus = "active"
+    frequency: str = "continuous"
+    start_date: str | None = None
+    end_date: str | None = None
+    default_points: int = 10
+    repentance_category: RepentanceCategory | None = None
+    tradition: str | None = None
+    # lifecycle bookkeeping
+    pause_reason: str | None = None
+    resume_date: str | None = None
+    streak: int = 0
+    last_completed_date: str | None = None
+    created_at: str = Field(default_factory=now_iso)
     updated_at: str = Field(default_factory=now_iso)

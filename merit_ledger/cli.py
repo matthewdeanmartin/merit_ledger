@@ -18,9 +18,16 @@ def main() -> None:
         action="version",
         version=f"%(prog)s {__version__}",
     )
-    # TODO: add subcommands here
+    parser.add_argument(
+        "--backend-only",
+        action="store_true",
+        help="Start the backend and wait for health, then exit (no window).",
+    )
     args = parser.parse_args()
-    _ = args  # remove once subcommands are added
+
+    from merit_ledger import app
+
+    raise SystemExit(app.run(with_ui=not args.backend_only))
 
 
 if __name__ == "__main__":

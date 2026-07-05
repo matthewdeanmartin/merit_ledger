@@ -24,7 +24,7 @@ progress" status after a breach. Spec Phase 3 (§24), flows §5.3–§5.6, model
 
 ## Tasks
 
-- [ ] `backend/domain/models.py` — add `Vow` model (spec §8): vow_id, user_id, name, description,
+- [x] `backend/domain/models.py` — add `Vow` model (spec §8): vow_id, user_id, name, description,
       vow_type ("positive"|"negative"), strength ("aspiration"|"training_commitment"|
       "formal_vow"|"experiment"), status ("draft"|"active"|"paused"|"repair_in_progress"|
       "completed"|"retired"), frequency (free string: "continuous"|"daily"|...),
@@ -32,14 +32,14 @@ progress" status after a breach. Spec Phase 3 (§24), flows §5.3–§5.6, model
       resume_date (opt), created_at, updated_at. Use `new_id("vow")` default.
       Also a small `VowStreak`/`streak` int on the vow (spec §5.3 "Streak updated") — keep simple:
       store `streak` and `last_completed_date` on the Vow.
-- [ ] `backend/domain/vow_state.py` — pure state-transition helpers + allowed-transition table.
+- [x] `backend/domain/vow_state.py` — pure state-transition helpers + allowed-transition table.
       Functions like `can_pause(status)`, `apply_complete`, `apply_breach`, `apply_pause`,
       `apply_resume`, `apply_retire` returning the new status (raise/return error on illegal).
       Unit-test the table (e.g. can't pause a retired vow; breach → repair_in_progress).
-- [ ] `item_keys.py` — `to_vow_item`/`vow_from_item`; SK=`VOW#<vow_id>`; entity_type="VOW";
+- [x] `item_keys.py` — `to_vow_item`/`vow_from_item`; SK=`VOW#<vow_id>`; entity_type="VOW";
       GSI1 by status: gsi1pk=`USER#<u>#VOW_STATUS#<status>`, gsi1sk=`VOW#<vow_id>`.
       Add `VOW_SK_PREFIX`.
-- [ ] `services/vow_service.py`:
+- [x] `services/vow_service.py`:
       - create_vow (status defaults active unless draft), list_vows (optionally by status via GSI1),
         get_vow, update_vow.
       - complete_vow(positive): create `vow_completed` ledger entry with points (vow.default_points,
@@ -52,15 +52,15 @@ progress" status after a breach. Spec Phase 3 (§24), flows §5.3–§5.6, model
       - resume_vow(new_frequency?, new_points?, renewed_intention?) → status active + `vow_resumed`.
       - retire_vow → status retired + `vow_retired` entry.
       When status changes, re-put the vow so its GSI1 status key updates.
-- [ ] `api/vows.py` (spec §14.3): GET /vows (query ?status=), GET /vows/{id}, POST /vows,
+- [x] `api/vows.py` (spec §14.3): GET /vows (query ?status=), GET /vows/{id}, POST /vows,
       PUT /vows/{id}, POST /vows/{id}/pause, /resume, /retire, /complete, /breach.
       Wire into main.py. Use small pydantic bodies for pause/resume/breach inputs.
-- [ ] Export: vows already bucket via scan_all (entity_type VOW) — verify export includes them.
-- [ ] Tests: `test_vows.py` (state machine + service), `test_api_vows.py`
+- [x] Export: vows already bucket via scan_all (entity_type VOW) — verify export includes them.
+- [x] Tests: `test_vows.py` (state machine + service), `test_api_vows.py`
       (create/pause/resume/complete/breach/retire, list by status). Cover:
       breach sets repair_in_progress; paused vow is not "failed"; complete bumps streak.
-- [ ] `uv run pytest` + `uv run mypy merit_ledger` green.
-- [ ] Write `sprints/sprint4.md`.
+- [x] `uv run pytest` + `uv run mypy merit_ledger` green.
+- [x] Write `sprints/sprint4.md`.
 
 ## Design notes
 

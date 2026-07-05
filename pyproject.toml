@@ -24,6 +24,7 @@ dependencies = [
     "httpx>=0.28.1",
     "platformdirs>=4.10.0",
     "pydantic>=2.13.4",
+    "pygame-ce>=2.5.7",
     "uvicorn>=0.50.0",
 ]
 
@@ -154,6 +155,13 @@ packages = ["merit_ledger", "tests"]
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_untyped_calls = false
+
+# The Pygame frontend api_client deals in dynamic JSON (dict[str, Any]) from the backend;
+# json() is Any, so returning it as a typed dict trips warn_return_any. This is a thin view
+# layer, not domain logic — relax just this module.
+[[tool.mypy.overrides]]
+module = "merit_ledger.frontend.api_client"
+warn_return_any = false
 
 [tool.ruff]
 line-length = 120
