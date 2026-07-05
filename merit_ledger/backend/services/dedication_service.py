@@ -46,10 +46,7 @@ _SECULAR_TARGETS: list[dict[str, str]] = [
 def presets(repo: MeritRepository, user_id: str = DEFAULT_USER_ID) -> dict[str, Any]:
     """Return preset dedication targets + default text for the active tradition."""
     settings = profile_service.get_settings(repo, user_id)
-    if settings.tradition == "secular":
-        targets = _SECULAR_TARGETS
-    else:
-        targets = _PRESET_TARGETS
+    targets = _SECULAR_TARGETS if settings.tradition == "secular" else _PRESET_TARGETS
     try:
         pack = tradition_service.get_tradition(settings.tradition)
         default_text = pack.get("dedication_language", {}).get("default_text", "")

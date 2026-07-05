@@ -44,6 +44,13 @@ class ApiClient:
         """Save settings."""
         return self._put("/settings", settings)
 
+    def clear_data(self, scope: str = "all") -> dict[str, Any]:
+        """Clear local data. ``scope`` is ``"all"`` (factory reset) or ``"user_data"``.
+
+        ``"user_data"`` keeps profile + settings and only removes the practice ledger.
+        """
+        return self._post("/settings/clear", {"confirm": True, "scope": scope})
+
     def list_traditions(self) -> list[dict[str, Any]]:
         """List available traditions."""
         return self._get("/traditions")
@@ -75,9 +82,69 @@ class ApiClient:
         params = {"status": status} if status else None
         return self._get("/vows", params=params)
 
+    def get_vow(self, vow_id: str) -> dict[str, Any]:
+        """Return a single vow."""
+        return self._get(f"/vows/{vow_id}")
+
+    def create_vow(self, vow: dict[str, Any]) -> dict[str, Any]:
+        """Create a vow."""
+        return self._post("/vows", vow)
+
+    def vow_action(self, vow_id: str, action: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Run a vow lifecycle action: pause/resume/retire/complete/breach."""
+        return self._post(f"/vows/{vow_id}/{action}", body or {})
+
+    # --- repentance / dedication / mudita -----------------------------------
+
+    def repentance_categories(self) -> dict[str, Any]:
+        """Return repentance categories + the privacy reminder."""
+        return self._get("/repentance/categories")
+
+    def create_repentance(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Record a repentance ('return to practice') entry."""
+        return self._post("/repentance", body)
+
+    def list_dedications(self) -> list[dict[str, Any]]:
+        """List dedications."""
+        return self._get("/dedications")
+
+    def dedication_presets(self) -> dict[str, Any]:
+        """Return preset dedication targets + default text for the active tradition."""
+        return self._get("/dedications/presets")
+
+    def create_dedication(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Create a dedication."""
+        return self._post("/dedications", body)
+
+    def mudita_feed(self) -> dict[str, Any]:
+        """Return the local sample feed + rejoice verb."""
+        return self._get("/mudita/demo-feed")
+
+    def mudita_rejoice(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Rejoice in a sample action → local ledger entry."""
+        return self._post("/mudita/rejoice", body)
+
+    # --- stats ---------------------------------------------------------------
+
     def stats_today(self) -> dict[str, Any]:
         """Return today's point/count totals."""
         return self._get("/stats/today")
+
+    def stats_week(self) -> dict[str, Any]:
+        """Return the trailing-week totals."""
+        return self._get("/stats/week")
+
+    def stats_month(self) -> dict[str, Any]:
+        """Return the current-month totals."""
+        return self._get("/stats/month")
+
+    def stats_by_template(self) -> dict[str, int]:
+        """Return points grouped by template."""
+        return self._get("/stats/by-template")
+
+    def stats_vows(self) -> dict[str, Any]:
+        """Return vow status counts + streaks."""
+        return self._get("/stats/vows")
 
     # --- low-level helpers ---------------------------------------------------
 

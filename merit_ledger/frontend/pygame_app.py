@@ -50,7 +50,7 @@ class PygameApp:
             settings = self.api.get_settings()
             pack = self.api.get_tradition(settings.get("tradition", "secular"))
             self.palette = palette_for_theme(pack.get("theme", ""))
-        except Exception:  # noqa: BLE001 - never let theming crash the UI
+        except Exception:
             self.palette = palette_for_theme("")
 
     def switch_to(self, scene: Scene) -> None:

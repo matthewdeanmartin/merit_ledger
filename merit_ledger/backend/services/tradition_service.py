@@ -8,7 +8,7 @@ them via :mod:`importlib.resources` so they work from a wheel too.
 from __future__ import annotations
 
 import json
-from functools import lru_cache
+from functools import cache
 from importlib import resources
 from typing import Any
 
@@ -18,7 +18,7 @@ _PACKAGE = "merit_ledger.backend.tradition_packs"
 _TRADITION_IDS = ("zen", "chinese_mahayana", "nichiren", "pure_land", "secular")
 
 
-@lru_cache(maxsize=None)
+@cache
 def _load_pack(tradition_id: str) -> dict[str, Any]:
     """Read and cache a single pack's JSON, raising KeyError if unknown."""
     if tradition_id not in _TRADITION_IDS:

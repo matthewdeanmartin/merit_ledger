@@ -93,3 +93,12 @@ def test_scan_all(repo: MeritRepository) -> None:
     repo.put_item(_item("USER#a", "A"))
     scanned = repo.scan_all()
     assert [(i.pk, i.sk) for i in scanned] == [("USER#a", "A"), ("USER#u", "B")]
+
+
+def test_clear(repo: MeritRepository) -> None:
+    repo.put_item(_item("USER#u", "A"))
+    repo.put_item(_item("USER#u", "B"))
+    removed = repo.clear()
+    assert removed == 2
+    assert repo.scan_all() == []
+    assert repo.clear() == 0  # idempotent on an empty store

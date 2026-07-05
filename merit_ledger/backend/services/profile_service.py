@@ -39,3 +39,33 @@ def save_settings(repo: MeritRepository, settings: Settings) -> Settings:
     settings.updated_at = now_iso()
     repo.put_item(to_settings_item(settings))
     return settings
+
+
+def clear_data(repo: MeritRepository) -> int:
+    """Delete all local data (spec §17.5).
+
+    This is a factory reset: profile, settings, templates, vows, entries, and dedications
+    are all removed. Onboarding will run again on next launch since the ``onboarded`` flag
+    is gone. Returns the number of items deleted.
+    """
+    return repo.clear()
+
+
+# Entity types considered "user data" — the practice ledger, not identity/config.
+# PROFILE and SETTINGS are deliberately preserved by clear_user_data.
+_USER_DATA_ENTITY_TYPES = frozenset({"ENTRY", "VOW", "DEDICATION", "TEMPLATE"})
+
+
+def clear_user_data(repo: MeritRepository) -> int:
+    """Delete practice data but keep profile + settings (handy for manual testing).
+
+    Removes ledger entries, vows, dedications, and custom templates, leaving the profile
+    and settings (including the ``onboarded`` flag and chosen tradition) intact — so the
+    app stays configured and does not re-run onboarding. Returns the number deleted.
+    """
+    deleted = 0
+    for item in repo.scan_all():
+        if item.entity_type in _USER_DATA_ENTITY_TYPES:
+            repo.delete_item(item.pk, item.sk)
+            deleted += 1
+    return deleted

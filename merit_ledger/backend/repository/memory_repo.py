@@ -65,3 +65,9 @@ class InMemoryMeritRepository(MeritRepository):
             self._store[key].model_copy(deep=True)
             for key in sorted(self._store.keys())
         ]
+
+    def clear(self) -> int:
+        """Delete every item and return the number removed."""
+        removed = len(self._store)
+        self._store.clear()
+        return removed

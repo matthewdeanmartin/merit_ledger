@@ -62,3 +62,7 @@ class MeritRepository(abc.ABC):
     @abc.abstractmethod
     def scan_all(self) -> list[MeritItem]:
         """Return every item (used for export). Not a Dynamo access pattern, but cheap locally."""
+
+    @abc.abstractmethod
+    def clear(self) -> int:
+        """Delete every item and return the number removed (spec §17.5 'Clear local data')."""

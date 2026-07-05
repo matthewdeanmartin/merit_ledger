@@ -161,3 +161,10 @@ class SqliteMeritRepository(MeritRepository):
             cur = self._conn.execute(f"SELECT {_COLUMNS} FROM merit_items ORDER BY pk, sk")
             rows = cur.fetchall()
         return [self._row_to_item(r) for r in rows]
+
+    def clear(self) -> int:
+        """Delete every row and return the number removed."""
+        with self._lock:
+            cur = self._conn.execute("DELETE FROM merit_items")
+            self._conn.commit()
+            return int(cur.rowcount)

@@ -66,7 +66,15 @@ After finishing a sprint, the *next* sprint's file is always written out so any 
   with tab nav stubs; `onboarded` flag added to Settings. 97 tests (+1 integration) + mypy clean
   (59 files). Verified: window launches, onboarding persists, dashboard shows today's total; also
   verified headless render smoke + real backend boot on a thread.
-- Sprint 6: not started — see sprints/sprint6.md. (Pygame core screens.)
+- Sprint 6: ✅ done (2026-07-05) — all 8 core scenes (record/vows/vow_detail/repentance/
+  dedication/stats/settings/mudita_garden) on a shared MainScene + nav bar (scenes/nav.py);
+  api_client expanded to full endpoint set; live tradition re-theme; breach→repentance routing
+  with prefill; TWO clear-data scopes (user_data keeps profile/settings; all = factory reset).
+  Also added: repo.clear(), profile_service.clear_user_data, POST /settings/clear (scope + confirm
+  guard), ruff flake8-bugbear FastAPI Depends allowance. 115 tests + mypy + ruff all green. Verified
+  all 9 scenes render headlessly. Deliberate simplifications (text-input widget, settings toggles,
+  export/import UI, scroll, animations) documented in sprint6.md + folded into Sprint 7.
+- Sprint 7: not started — see sprints/sprint7.md. (Beauty pass + deferred Sprint 6 polish.)
 
 ## Later / candidate sprints (not yet numbered)
 
