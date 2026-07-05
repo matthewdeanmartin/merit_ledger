@@ -1,0 +1,37 @@
+---
+site_name: merit_ledger
+site_url: https://merit_ledger.readthedocs.io/
+site_author: Matthew Dean Martin <matthewdeanmartin@gmail.com>
+site_description: Keep track of your merit. A Chinese Mahayana Buddhist practice from 1000 years ago.
+repo_url: https://github.com/matthewdeanmartin/merit_ledger
+theme:
+  name: readthedocs
+  features: [navigation.footer]
+edit_uri: edit/main/docs/
+markdown_extensions:
+  - attr_list
+  - codehilite
+  - toc:
+      permalink: true
+nav:
+  - Overview:
+      - Readme.md: overview/README.md
+  - Installation: installation.md
+  - Usage:
+      - Quick Start: usage/quickstart.md
+  - Contributing: extending/CONTRIBUTING.md
+  - Change Log: CHANGELOG.md
+validation:
+  nav:
+    omitted_files: warn
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
