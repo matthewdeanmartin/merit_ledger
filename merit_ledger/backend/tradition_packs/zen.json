@@ -1,0 +1,44 @@
+{
+  "tradition_id": "zen",
+  "display_name": "Zen",
+  "theme": "ink_wash",
+  "tone": "minimal, simple, spacious, practice-oriented",
+  "labels": {
+    "merit": "Practice",
+    "vow": "Vow",
+    "repentance": "Return to practice",
+    "dedication": "Dedication",
+    "rejoicing": "Rejoice"
+  },
+  "point_defaults": {
+    "positive": 5,
+    "repentance": 5,
+    "rejoicing": 3
+  },
+  "suggested_practices": [
+    {"template_id": "zen.zazen", "name": "Zazen", "practice_type": "positive", "default_points": 5, "quantity_unit": "minutes", "default_quantity": 20, "tags": ["meditation", "daily_practice"]},
+    {"template_id": "zen.kinhin", "name": "Kinhin (walking meditation)", "practice_type": "positive", "default_points": 3, "quantity_unit": "minutes", "default_quantity": 10, "tags": ["meditation"]},
+    {"template_id": "zen.bowing", "name": "Bowing", "practice_type": "positive", "default_points": 3, "quantity_unit": "bows", "default_quantity": 9, "tags": ["devotion"]},
+    {"template_id": "zen.chanting", "name": "Chanting", "practice_type": "positive", "default_points": 4, "tags": ["chanting"]},
+    {"template_id": "zen.cleaning", "name": "Cleaning practice space", "practice_type": "positive", "default_points": 3, "tags": ["work_practice"]},
+    {"template_id": "zen.mindful_work", "name": "Mindful work", "practice_type": "positive", "default_points": 4, "tags": ["work_practice"]},
+    {"template_id": "zen.help_person", "name": "Helping another person", "practice_type": "positive", "default_points": 5, "tags": ["compassion"]},
+    {"template_id": "zen.rejoice", "name": "Rejoicing in another's practice", "practice_type": "rejoicing", "default_points": 3, "tags": ["mudita"]}
+  ],
+  "suggested_vows": [
+    {"name": "Sit zazen daily", "vow_type": "positive", "frequency": "daily"},
+    {"name": "Refrain from harsh speech", "vow_type": "negative", "frequency": "continuous", "repentance_category": "speech"},
+    {"name": "Refrain from intoxication", "vow_type": "negative", "frequency": "continuous", "repentance_category": "intoxication"}
+  ],
+  "repentance_categories": ["speech", "harm", "anger", "greed", "neglect", "carelessness", "broken_commitment", "general"],
+  "dedication_language": {
+    "default_target": "all_beings",
+    "default_text": "May this practice benefit all beings."
+  },
+  "rejoicing_language": {"verb": "Rejoice"},
+  "glossary": {
+    "zazen": "Seated meditation.",
+    "kinhin": "Walking meditation between periods of zazen."
+  },
+  "enabled_modules": ["practice", "vows", "repentance", "dedication", "mudita"]
+}

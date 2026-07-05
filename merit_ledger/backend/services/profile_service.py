@@ -1,0 +1,41 @@
+"""Profile and settings persistence (single items per user)."""
+
+from __future__ import annotations
+
+from merit_ledger.backend.domain.ids import now_iso
+from merit_ledger.backend.domain.models import Profile, Settings
+from merit_ledger.backend.repository.base import MeritRepository
+from merit_ledger.backend.repository.item_keys import (
+    profile_from_item,
+    settings_from_item,
+    to_profile_item,
+    to_settings_item,
+    user_pk,
+)
+from merit_ledger.local.config import DEFAULT_USER_ID
+
+
+def get_profile(repo: MeritRepository, user_id: str = DEFAULT_USER_ID) -> Profile:
+    """Return the stored profile, or a default one if none exists yet."""
+    item = repo.get_item(user_pk(user_id), "PROFILE")
+    return profile_from_item(item) if item else Profile(user_id=user_id)
+
+
+def save_profile(repo: MeritRepository, profile: Profile) -> Profile:
+    """Persist ``profile`` (bumping updated_at) and return it."""
+    profile.updated_at = now_iso()
+    repo.put_item(to_profile_item(profile))
+    return profile
+
+
+def get_settings(repo: MeritRepository, user_id: str = DEFAULT_USER_ID) -> Settings:
+    """Return the stored settings, or defaults if none exist yet."""
+    item = repo.get_item(user_pk(user_id), "SETTINGS")
+    return settings_from_item(item) if item else Settings(user_id=user_id)
+
+
+def save_settings(repo: MeritRepository, settings: Settings) -> Settings:
+    """Persist ``settings`` (bumping updated_at) and return it."""
+    settings.updated_at = now_iso()
+    repo.put_item(to_settings_item(settings))
+    return settings

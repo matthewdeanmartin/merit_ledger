@@ -19,7 +19,13 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-dependencies = []
+dependencies = [
+    "fastapi>=0.139.0",
+    "httpx>=0.28.1",
+    "platformdirs>=4.10.0",
+    "pydantic>=2.13.4",
+    "uvicorn>=0.50.0",
+]
 
 [project.urls]
 Repository = "https://github.com/matthewdeanmartin/merit_ledger"
@@ -40,6 +46,7 @@ packages = ["merit_ledger"]
 include = [
     "merit_ledger/**/*.py",
     "merit_ledger/py.typed",
+    "merit_ledger/backend/tradition_packs/*.json",
     "/README.md",
     "LICENSE",
 ]

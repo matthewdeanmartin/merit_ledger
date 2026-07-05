@@ -1,0 +1,46 @@
+{
+  "tradition_id": "chinese_mahayana",
+  "display_name": "Chinese Mahayana",
+  "theme": "temple_gold",
+  "tone": "devotional, compassion-oriented, precept-aware, dedication-rich",
+  "labels": {
+    "merit": "Merit",
+    "vow": "Precept",
+    "repentance": "Repentance",
+    "dedication": "Dedication of merit",
+    "rejoicing": "Rejoicing"
+  },
+  "point_defaults": {
+    "positive": 10,
+    "repentance": 5,
+    "rejoicing": 5
+  },
+  "suggested_practices": [
+    {"template_id": "cm.heart_sutra", "name": "Recite Heart Sutra", "practice_type": "positive", "default_points": 10, "tags": ["recitation"]},
+    {"template_id": "cm.amitabha", "name": "Recite Amitabha Buddha's name", "practice_type": "positive", "default_points": 10, "quantity_unit": "recitations", "default_quantity": 108, "tags": ["recitation", "devotion"]},
+    {"template_id": "cm.guanyin", "name": "Recite Guanyin's name", "practice_type": "positive", "default_points": 10, "quantity_unit": "recitations", "default_quantity": 108, "tags": ["recitation", "compassion"]},
+    {"template_id": "cm.bowing_repentance", "name": "Bowing repentance", "practice_type": "repentance", "default_points": 5, "tags": ["repentance", "devotion"]},
+    {"template_id": "cm.vegetarian", "name": "Vegetarian meal", "practice_type": "positive", "default_points": 5, "tags": ["precept", "non_harming"]},
+    {"template_id": "cm.protect_animals", "name": "Protect animals / donate to animal care", "practice_type": "positive", "default_points": 8, "tags": ["compassion", "non_harming"]},
+    {"template_id": "cm.support_temple", "name": "Support monastics or temple", "practice_type": "positive", "default_points": 8, "tags": ["generosity"]},
+    {"template_id": "cm.copy_sutra", "name": "Copy sutra", "practice_type": "positive", "default_points": 8, "tags": ["study"]},
+    {"template_id": "cm.generosity", "name": "Practice generosity", "practice_type": "positive", "default_points": 6, "tags": ["generosity"]},
+    {"template_id": "cm.rejoice", "name": "Rejoice in merit", "practice_type": "rejoicing", "default_points": 5, "tags": ["mudita"]}
+  ],
+  "suggested_vows": [
+    {"name": "Refrain from killing", "vow_type": "negative", "frequency": "continuous", "repentance_category": "harm"},
+    {"name": "Refrain from false speech", "vow_type": "negative", "frequency": "continuous", "repentance_category": "speech"},
+    {"name": "Daily recitation", "vow_type": "positive", "frequency": "daily"}
+  ],
+  "repentance_categories": ["speech", "harm", "anger", "greed", "neglect", "carelessness", "broken_commitment", "general"],
+  "dedication_language": {
+    "default_target": "all_beings",
+    "default_text": "May this merit benefit all sentient beings and lead them to awakening."
+  },
+  "rejoicing_language": {"verb": "Rejoice", "alt": "Sadhu"},
+  "glossary": {
+    "merit": "Wholesome roots produced by practice, traditionally dedicated to all beings.",
+    "guanyin": "Bodhisattva of compassion."
+  },
+  "enabled_modules": ["practice", "vows", "repentance", "dedication", "mudita"]
+}

@@ -1,0 +1,45 @@
+{
+  "tradition_id": "secular",
+  "display_name": "Secular",
+  "theme": "calm_blue",
+  "tone": "non-theistic, ethical, reflective, habit-based",
+  "labels": {
+    "merit": "Practice points",
+    "vow": "Commitment",
+    "repentance": "Repair",
+    "dedication": "Intention",
+    "rejoicing": "Appreciating good"
+  },
+  "point_defaults": {
+    "positive": 5,
+    "repentance": 3,
+    "rejoicing": 3
+  },
+  "suggested_practices": [
+    {"template_id": "secular.generous", "name": "Acted generously", "practice_type": "positive", "default_points": 5, "tags": ["generosity"]},
+    {"template_id": "secular.patience", "name": "Practiced patience", "practice_type": "positive", "default_points": 5, "tags": ["restraint"]},
+    {"template_id": "secular.speech", "name": "Avoided harmful speech", "practice_type": "positive", "default_points": 5, "tags": ["restraint"]},
+    {"template_id": "secular.help", "name": "Helped someone", "practice_type": "positive", "default_points": 5, "tags": ["compassion"]},
+    {"template_id": "secular.animal", "name": "Protected an animal", "practice_type": "positive", "default_points": 5, "tags": ["non_harming"]},
+    {"template_id": "secular.breathing", "name": "Practiced mindful breathing", "practice_type": "positive", "default_points": 4, "quantity_unit": "minutes", "default_quantity": 10, "tags": ["mindfulness"]},
+    {"template_id": "secular.repair", "name": "Repaired a mistake", "practice_type": "repentance", "default_points": 3, "tags": ["repair"]},
+    {"template_id": "secular.commitment", "name": "Kept a commitment", "practice_type": "positive", "default_points": 5, "tags": ["commitment"]},
+    {"template_id": "secular.appreciate", "name": "Rejoiced in someone else's good action", "practice_type": "rejoicing", "default_points": 3, "tags": ["mudita"]},
+    {"template_id": "secular.reflect", "name": "Reflected honestly", "practice_type": "neutral_reflection", "default_points": 3, "tags": ["reflection"]}
+  ],
+  "suggested_vows": [
+    {"name": "Ten minutes of mindful breathing daily", "vow_type": "positive", "frequency": "daily"},
+    {"name": "Refrain from harmful speech", "vow_type": "negative", "frequency": "continuous", "repentance_category": "speech"}
+  ],
+  "repentance_categories": ["speech", "harm", "anger", "greed", "neglect", "carelessness", "broken_commitment", "general"],
+  "dedication_language": {
+    "default_target": "generic_group",
+    "default_text": "May this action support the well-being of others."
+  },
+  "rejoicing_language": {"verb": "Appreciate"},
+  "glossary": {
+    "commitment": "A promise to yourself about how you want to act."
+  },
+  "enabled_modules": ["practice", "vows", "repair", "intention", "mudita"],
+  "disabled_modules": ["buddhas", "sutra_recitation", "rebirth_language", "ritual_repentance"]
+}

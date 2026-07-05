@@ -1,0 +1,43 @@
+{
+  "tradition_id": "pure_land",
+  "display_name": "Pure Land",
+  "theme": "sunset_gold",
+  "tone": "devotional, trust, gratitude, recitation, dedication",
+  "labels": {
+    "merit": "Merit",
+    "vow": "Vow",
+    "repentance": "Return to practice",
+    "dedication": "Dedication",
+    "rejoicing": "Rejoicing"
+  },
+  "point_defaults": {
+    "positive": 10,
+    "repentance": 5,
+    "rejoicing": 5
+  },
+  "name_options": ["Amitabha", "Amituofo", "Amida", "Namo Amituofo", "Namu Amida Butsu"],
+  "suggested_practices": [
+    {"template_id": "pureland.nembutsu", "name": "Nembutsu recitation", "practice_type": "positive", "default_points": 10, "quantity_unit": "recitations", "default_quantity": 108, "allows_dedication": true, "tags": ["recitation", "devotion", "daily_practice"]},
+    {"template_id": "pureland.dharma_talk", "name": "Listen to Dharma talk", "practice_type": "positive", "default_points": 5, "tags": ["study"]},
+    {"template_id": "pureland.read_text", "name": "Read Pure Land text", "practice_type": "positive", "default_points": 5, "tags": ["study"]},
+    {"template_id": "pureland.dedicate", "name": "Dedicate merit to all beings", "practice_type": "dedication", "default_points": 0, "tags": ["dedication"]},
+    {"template_id": "pureland.gratitude", "name": "Practice gratitude", "practice_type": "positive", "default_points": 4, "tags": ["reflection"]},
+    {"template_id": "pureland.help", "name": "Help another being", "practice_type": "positive", "default_points": 6, "tags": ["compassion"]},
+    {"template_id": "pureland.remember_death", "name": "Remember death compassionately", "practice_type": "neutral_reflection", "default_points": 3, "tags": ["reflection"]},
+    {"template_id": "pureland.rejoice", "name": "Rejoice in another's practice", "practice_type": "rejoicing", "default_points": 5, "tags": ["mudita"]}
+  ],
+  "suggested_vows": [
+    {"name": "Daily nembutsu", "vow_type": "positive", "frequency": "daily"},
+    {"name": "Refrain from harsh speech", "vow_type": "negative", "frequency": "continuous", "repentance_category": "speech"}
+  ],
+  "repentance_categories": ["speech", "harm", "anger", "greed", "neglect", "carelessness", "broken_commitment", "general"],
+  "dedication_language": {
+    "default_target": "all_beings",
+    "default_text": "May this merit benefit all sentient beings and bring them to the Pure Land."
+  },
+  "rejoicing_language": {"verb": "Rejoice", "alt": "Namu"},
+  "glossary": {
+    "nembutsu": "Recitation of the name of Amitabha Buddha."
+  },
+  "enabled_modules": ["practice", "vows", "repentance", "dedication", "mudita"]
+}

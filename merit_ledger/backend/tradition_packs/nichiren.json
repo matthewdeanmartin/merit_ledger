@@ -1,0 +1,43 @@
+{
+  "tradition_id": "nichiren",
+  "display_name": "Nichiren",
+  "theme": "dawn_gradient",
+  "tone": "chanting, Lotus Sutra, daily practice, encouragement",
+  "labels": {
+    "merit": "Practice",
+    "vow": "Vow",
+    "repentance": "Return to practice",
+    "dedication": "Dedication",
+    "rejoicing": "Rejoice"
+  },
+  "point_defaults": {
+    "positive": 10,
+    "repentance": 5,
+    "rejoicing": 5
+  },
+  "phrase_options": ["Namu Myōhō Renge Kyō", "Nam-myoho-renge-kyo"],
+  "suggested_practices": [
+    {"template_id": "nichiren.daimoku", "name": "Chant daimoku", "practice_type": "positive", "default_points": 10, "quantity_unit": "minutes", "default_quantity": 15, "tags": ["chanting", "daily_practice"]},
+    {"template_id": "nichiren.gongyo", "name": "Gongyo", "practice_type": "positive", "default_points": 10, "tags": ["recitation", "daily_practice"]},
+    {"template_id": "nichiren.lotus_passage", "name": "Read Lotus Sutra passage", "practice_type": "positive", "default_points": 6, "tags": ["study"]},
+    {"template_id": "nichiren.encourage", "name": "Encourage another person", "practice_type": "positive", "default_points": 6, "tags": ["compassion"]},
+    {"template_id": "nichiren.support", "name": "Support someone's practice", "practice_type": "positive", "default_points": 6, "tags": ["compassion"]},
+    {"template_id": "nichiren.study", "name": "Study", "practice_type": "positive", "default_points": 5, "tags": ["study"]},
+    {"template_id": "nichiren.rejoice", "name": "Rejoice in another's benefit", "practice_type": "rejoicing", "default_points": 5, "tags": ["mudita"]}
+  ],
+  "suggested_vows": [
+    {"name": "Daily gongyo and daimoku", "vow_type": "positive", "frequency": "daily"},
+    {"name": "Refrain from slander", "vow_type": "negative", "frequency": "continuous", "repentance_category": "speech"}
+  ],
+  "repentance_categories": ["speech", "harm", "anger", "greed", "neglect", "carelessness", "broken_commitment", "general"],
+  "dedication_language": {
+    "default_target": "all_beings",
+    "default_text": "May this practice bring benefit and encouragement to all."
+  },
+  "rejoicing_language": {"verb": "Rejoice"},
+  "glossary": {
+    "daimoku": "Chanting Nam-myoho-renge-kyo.",
+    "gongyo": "Recitation of portions of the Lotus Sutra."
+  },
+  "enabled_modules": ["practice", "vows", "repentance", "dedication", "mudita"]
+}
