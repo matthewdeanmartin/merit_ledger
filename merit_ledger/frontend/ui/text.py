@@ -20,9 +20,7 @@ def render(text: str, size: int, color: RGB) -> pygame.Surface:
     return _font(size).render(text, True, color)
 
 
-def draw_text(
-    surface: pygame.Surface, text: str, pos: tuple[int, int], size: int, color: RGB
-) -> pygame.Rect:
+def draw_text(surface: pygame.Surface, text: str, pos: tuple[int, int], size: int, color: RGB) -> pygame.Rect:
     """Blit ``text`` at ``pos`` (top-left) and return its bounding rect."""
     surf = render(text, size, color)
     rect = surf.get_rect(topleft=pos)
@@ -30,9 +28,7 @@ def draw_text(
     return rect
 
 
-def draw_text_center(
-    surface: pygame.Surface, text: str, center: tuple[int, int], size: int, color: RGB
-) -> pygame.Rect:
+def draw_text_center(surface: pygame.Surface, text: str, center: tuple[int, int], size: int, color: RGB) -> pygame.Rect:
     """Blit ``text`` centered at ``center`` and return its bounding rect."""
     surf = render(text, size, color)
     rect = surf.get_rect(center=center)

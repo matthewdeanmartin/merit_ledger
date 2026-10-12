@@ -33,9 +33,7 @@ def get_template(template_id: str, repo: MeritRepository = Depends(get_repo)) ->
 
 
 @router.post("/templates")
-def create_template(
-    template: PracticeTemplate, repo: MeritRepository = Depends(get_repo)
-) -> PracticeTemplate:
+def create_template(template: PracticeTemplate, repo: MeritRepository = Depends(get_repo)) -> PracticeTemplate:
     """Create a custom template."""
     return template_service.save_template(repo, template)
 

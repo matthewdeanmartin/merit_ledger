@@ -61,9 +61,5 @@ def clear_data(body: ClearDataRequest, repo: MeritRepository = Depends(get_repo)
     """
     if not body.confirm:
         raise HTTPException(status_code=400, detail="Set confirm=true to clear local data.")
-    deleted = (
-        profile_service.clear_user_data(repo)
-        if body.scope == "user_data"
-        else profile_service.clear_data(repo)
-    )
+    deleted = profile_service.clear_user_data(repo) if body.scope == "user_data" else profile_service.clear_data(repo)
     return {"deleted": deleted}

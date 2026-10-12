@@ -64,6 +64,4 @@ def create_repentance(
         linked_vow_id=linked_vow_id,
         vow_id=linked_vow_id,
     )
-    return entry_service.create_entry(
-        repo, entry, manual_points=_repentance_points(repo, user_id), user_id=user_id
-    )
+    return entry_service.create_entry(repo, entry, manual_points=_repentance_points(repo, user_id), user_id=user_id)

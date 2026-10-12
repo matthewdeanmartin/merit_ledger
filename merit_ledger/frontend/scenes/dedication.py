@@ -57,19 +57,25 @@ class DedicationScene(MainScene):
 
         self._target_field = TextInput(
             pygame.Rect(420, self.BODY_TOP + 60, 460, 40),
-            text="All sentient beings", placeholder="dedicate to…", max_length=60, font_size=24,
+            text="All sentient beings",
+            placeholder="dedicate to…",
+            max_length=60,
+            font_size=24,
         )
         self._text_field = TextInput(
             pygame.Rect(420, self.BODY_TOP + 120, 460, 40),
-            text=default_text, placeholder="dedication words", max_length=140, font_size=22,
+            text=default_text,
+            placeholder="dedication words",
+            max_length=140,
+            font_size=22,
         )
         self._points_field = TextInput(
             pygame.Rect(420, self.BODY_TOP + 180, 120, 40),
-            text="0", max_length=5, font_size=24,
+            text="0",
+            max_length=5,
+            font_size=24,
         )
-        self._save_button = Button(
-            "Dedicate", pygame.Rect(560, self.BODY_TOP + 180, 160, 44), self._save, font_size=24
-        )
+        self._save_button = Button("Dedicate", pygame.Rect(560, self.BODY_TOP + 180, 160, 44), self._save, font_size=24)
 
     def _pick(self, target: dict[str, Any]) -> None:
         """Fill the target fields from a preset."""

@@ -9,8 +9,14 @@ def test_markdown_export_renders(client: TestClient) -> None:
     client.put("/settings/tradition", json={"tradition": "pure_land"})
     client.post(
         "/entries",
-        json={"entry": {"template_id": "pureland.nembutsu", "title": "Nembutsu recitation",
-                        "quantity": 108, "reflection": "Felt scattered but returned."}},
+        json={
+            "entry": {
+                "template_id": "pureland.nembutsu",
+                "title": "Nembutsu recitation",
+                "quantity": 108,
+                "reflection": "Felt scattered but returned.",
+            }
+        },
     )
     md = client.get("/export/markdown").text
     assert "# Merit Ledger Export" in md

@@ -37,9 +37,7 @@ def get_tradition(tradition_id: str) -> dict[str, Any]:
 
 
 @router.put("/settings/tradition")
-def set_tradition(
-    selection: TraditionSelection, repo: MeritRepository = Depends(get_repo)
-) -> dict[str, str]:
+def set_tradition(selection: TraditionSelection, repo: MeritRepository = Depends(get_repo)) -> dict[str, str]:
     """Persist the active tradition on both profile and settings."""
     settings = profile_service.get_settings(repo)
     settings.tradition = selection.tradition

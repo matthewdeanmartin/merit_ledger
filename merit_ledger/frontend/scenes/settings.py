@@ -50,15 +50,17 @@ class SettingsScene(MainScene):
         # Data section: two clear scopes (spec §17.5) with a confirm step.
         dy = self.app_height() - 130
         if self._confirm_scope is None:
-            self._buttons.append(Button("Clear user data", pygame.Rect(20, dy, 220, 44),
-                                        partial(self._ask_clear, "user_data"), font_size=22))
-            self._buttons.append(Button("Clear ALL data", pygame.Rect(252, dy, 220, 44),
-                                        partial(self._ask_clear, "all"), font_size=22))
+            self._buttons.append(
+                Button(
+                    "Clear user data", pygame.Rect(20, dy, 220, 44), partial(self._ask_clear, "user_data"), font_size=22
+                )
+            )
+            self._buttons.append(
+                Button("Clear ALL data", pygame.Rect(252, dy, 220, 44), partial(self._ask_clear, "all"), font_size=22)
+            )
         else:
-            self._buttons.append(Button("Confirm", pygame.Rect(20, dy, 160, 44),
-                                        self._do_clear, font_size=22))
-            self._buttons.append(Button("Cancel", pygame.Rect(192, dy, 160, 44),
-                                        self._cancel_clear, font_size=22))
+            self._buttons.append(Button("Confirm", pygame.Rect(20, dy, 160, 44), self._do_clear, font_size=22))
+            self._buttons.append(Button("Cancel", pygame.Rect(192, dy, 160, 44), self._cancel_clear, font_size=22))
 
     def app_height(self) -> int:
         """Current window height (fallback 640)."""
@@ -110,8 +112,7 @@ class SettingsScene(MainScene):
         p = self.app.palette
         text_ui.draw_text(
             surface,
-            f"Tradition: {self._settings.get('tradition', '?')}   ·   "
-            f"Points: {self._settings.get('points_mode', '?')}",
+            f"Tradition: {self._settings.get('tradition', '?')}   ·   Points: {self._settings.get('points_mode', '?')}",
             (20, self.BODY_TOP + 20),
             22,
             p.text_muted,

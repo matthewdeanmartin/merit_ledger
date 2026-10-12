@@ -54,9 +54,7 @@ def create_entry(body: EntryCreate, repo: MeritRepository = Depends(get_repo)) -
 
 
 @router.put("/entries/{entry_id}")
-def update_entry(
-    entry_id: str, entry: LedgerEntry, repo: MeritRepository = Depends(get_repo)
-) -> LedgerEntry:
+def update_entry(entry_id: str, entry: LedgerEntry, repo: MeritRepository = Depends(get_repo)) -> LedgerEntry:
     """Update an existing entry (id from the path wins)."""
     existing = entry_service.find_entry(repo, entry_id)
     if existing is None:

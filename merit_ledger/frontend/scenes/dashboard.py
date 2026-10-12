@@ -45,20 +45,14 @@ class DashboardScene(MainScene):
 
         points = self._today.get("total_points", 0)
         count = self._today.get("entry_count", 0)
-        text_ui.draw_text(
-            surface, f"{points} practice points · {count} entries today", (20, 132), 26, p.text_muted
-        )
-        text_ui.draw_text(
-            surface, f"Active vows: {self._active_vows}", (w - 260, 132), 24, p.text_muted
-        )
+        text_ui.draw_text(surface, f"{points} practice points · {count} entries today", (20, 132), 26, p.text_muted)
+        text_ui.draw_text(surface, f"Active vows: {self._active_vows}", (w - 260, 132), 24, p.text_muted)
 
         y = 200
         text_ui.draw_text(surface, "Recent", (20, y), 30, p.text)
         y += 44
         if not self._recent:
-            text_ui.draw_text(
-                surface, "No entries yet — record your first practice.", (20, y), 24, p.text_muted
-            )
+            text_ui.draw_text(surface, "No entries yet — record your first practice.", (20, y), 24, p.text_muted)
         for e in self._recent:
             rect = pygame.Rect(20, y, w - 40, 48)
             cards.draw_card(surface, rect, p, radius=10)

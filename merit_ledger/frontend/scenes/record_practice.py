@@ -76,10 +76,13 @@ class RecordPracticeScene(MainScene):
             font_size=22,
         )
         self._action_buttons = [
-            Button("Dedicate after: off", pygame.Rect(500, self.BODY_TOP + 180, 260, 40),
-                   self._toggle_dedicate, font_size=20),
-            Button("Record", pygame.Rect(500, self.BODY_TOP + 232, 160, 46),
-                   self._record, font_size=26),
+            Button(
+                "Dedicate after: off",
+                pygame.Rect(500, self.BODY_TOP + 180, 260, 40),
+                self._toggle_dedicate,
+                font_size=20,
+            ),
+            Button("Record", pygame.Rect(500, self.BODY_TOP + 232, 160, 46), self._record, font_size=26),
         ]
 
     def _select(self, tmpl: dict[str, Any]) -> None:

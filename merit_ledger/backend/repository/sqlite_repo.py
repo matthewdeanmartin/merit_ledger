@@ -122,9 +122,7 @@ class SqliteMeritRepository(MeritRepository):
             rows = cur.fetchall()
         return [self._row_to_item(r) for r in rows]
 
-    def _query_gsi(
-        self, pk_col: str, sk_col: str, pk_value: str, sk_prefix: str | None
-    ) -> list[MeritItem]:
+    def _query_gsi(self, pk_col: str, sk_col: str, pk_value: str, sk_prefix: str | None) -> list[MeritItem]:
         """Shared GSI query for both indexes."""
         with self._lock:
             if sk_prefix is None:
@@ -134,8 +132,7 @@ class SqliteMeritRepository(MeritRepository):
                 )
             else:
                 cur = self._conn.execute(
-                    f"SELECT {_COLUMNS} FROM merit_items "
-                    f"WHERE {pk_col} = ? AND {sk_col} LIKE ? ORDER BY {sk_col}",
+                    f"SELECT {_COLUMNS} FROM merit_items WHERE {pk_col} = ? AND {sk_col} LIKE ? ORDER BY {sk_col}",
                     (pk_value, f"{sk_prefix}%"),
                 )
             rows = cur.fetchall()

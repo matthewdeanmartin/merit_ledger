@@ -128,9 +128,7 @@ def retire_vow(vow_id: str, repo: MeritRepository = Depends(get_repo)) -> VowEve
 
 
 @router.post("/vows/{vow_id}/complete")
-def complete_vow(
-    vow_id: str, body: CompleteBody, repo: MeritRepository = Depends(get_repo)
-) -> VowEventResult:
+def complete_vow(vow_id: str, body: CompleteBody, repo: MeritRepository = Depends(get_repo)) -> VowEventResult:
     """Complete a positive vow (or close a repair loop)."""
     return _run(vow_service.complete_vow, repo, vow_id, reflection=body.reflection)
 

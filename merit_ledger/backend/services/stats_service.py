@@ -40,9 +40,7 @@ def week(repo: MeritRepository, user_id: str = DEFAULT_USER_ID) -> dict[str, Any
 def month(repo: MeritRepository, user_id: str = DEFAULT_USER_ID) -> dict[str, Any]:
     """Point/count totals for the current calendar month."""
     day = _today()
-    entries = entry_service.list_entries(
-        repo, date_prefix=day.strftime("%Y-%m"), user_id=user_id
-    )
+    entries = entry_service.list_entries(repo, date_prefix=day.strftime("%Y-%m"), user_id=user_id)
     return stats.period_stats(entries).__dict__
 
 

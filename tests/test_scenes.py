@@ -140,8 +140,7 @@ def test_breach_routes_to_repentance_with_prefill(app: PygameApp) -> None:
     from merit_ledger.frontend.scenes.repentance import RepentanceScene
     from merit_ledger.frontend.scenes.vow_detail import VowDetailScene
 
-    vow = app.api.create_vow({"name": "No harsh speech", "vow_type": "negative",
-                              "repentance_category": "speech"})
+    vow = app.api.create_vow({"name": "No harsh speech", "vow_type": "negative", "repentance_category": "speech"})
     detail = VowDetailScene(app, vow["vow_id"])
     detail.on_enter()
     detail._do("Record breach")
@@ -201,7 +200,7 @@ def test_dedication_links_to_source_entry(app: PygameApp) -> None:
     scene.on_enter()
     scene._save()
     updated = app.api.list_entries()
-    linked = [e for e in updated if e["entry_id"] == entry["entry_id"]][0]
+    linked = next(e for e in updated if e["entry_id"] == entry["entry_id"])
     assert linked["dedication_id"] is not None
 
 

@@ -10,7 +10,6 @@ from merit_ledger.backend.domain.vow_state import IllegalVowTransition
 from merit_ledger.backend.repository.memory_repo import InMemoryMeritRepository
 from merit_ledger.backend.services import entry_service, vow_service
 
-
 # --- state machine -----------------------------------------------------------
 
 
@@ -61,9 +60,7 @@ def test_complete_positive_bumps_streak_and_points() -> None:
 
 def test_breach_negative_enters_repair() -> None:
     repo = _repo()
-    vow = vow_service.create_vow(
-        repo, Vow(name="No harsh speech", vow_type="negative", repentance_category="speech")
-    )
+    vow = vow_service.create_vow(repo, Vow(name="No harsh speech", vow_type="negative", repentance_category="speech"))
     vow, entry = vow_service.breach_vow(repo, vow, note="noticed impatience")
     assert vow.status == "repair_in_progress"
     assert entry.entry_type == "vow_breached"

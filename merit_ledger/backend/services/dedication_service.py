@@ -14,8 +14,8 @@ from merit_ledger.backend.domain.models import Dedication
 from merit_ledger.backend.repository.base import MeritRepository
 from merit_ledger.backend.repository.item_keys import (
     DEDICATION_SK_PREFIX,
-    to_dedication_item,
     dedication_from_item,
+    to_dedication_item,
     user_pk,
 )
 from merit_ledger.backend.services import entry_service, profile_service, tradition_service
@@ -55,9 +55,7 @@ def presets(repo: MeritRepository, user_id: str = DEFAULT_USER_ID) -> dict[str, 
     return {"targets": targets, "default_text": default_text}
 
 
-def create_dedication(
-    repo: MeritRepository, dedication: Dedication, user_id: str = DEFAULT_USER_ID
-) -> Dedication:
+def create_dedication(repo: MeritRepository, dedication: Dedication, user_id: str = DEFAULT_USER_ID) -> Dedication:
     """Persist a dedication and, if it names a source entry, link it back on that entry.
 
     Records only — it never subtracts from a balance (spec §5.8 default). The

@@ -6,9 +6,7 @@ from fastapi.testclient import TestClient
 
 
 def test_create_dedication_links_to_entry(client: TestClient) -> None:
-    entry = client.post(
-        "/entries", json={"entry": {"template_id": "secular.help", "title": "Helped"}}
-    ).json()
+    entry = client.post("/entries", json={"entry": {"template_id": "secular.help", "title": "Helped"}}).json()
     ded = client.post(
         "/dedications",
         json={

@@ -40,16 +40,17 @@ class VowsScene(MainScene):
         self._row_buttons = []
         y = self.BODY_TOP + 20
         for vow in self._vows[:7]:
-            self._row_buttons.append(Button("Open", pygame.Rect(560, y + 6, 80, 34),
-                                            partial(self._open, vow["vow_id"]), font_size=20))
+            self._row_buttons.append(
+                Button("Open", pygame.Rect(560, y + 6, 80, 34), partial(self._open, vow["vow_id"]), font_size=20)
+            )
             y += 54
 
         # Two quick-create buttons at the bottom.
         self._create_buttons = [
-            Button("+ Positive vow", pygame.Rect(20, y + 10, 200, 44),
-                   partial(self._create, "positive"), font_size=22),
-            Button("+ Negative vow", pygame.Rect(232, y + 10, 200, 44),
-                   partial(self._create, "negative"), font_size=22),
+            Button("+ Positive vow", pygame.Rect(20, y + 10, 200, 44), partial(self._create, "positive"), font_size=22),
+            Button(
+                "+ Negative vow", pygame.Rect(232, y + 10, 200, 44), partial(self._create, "negative"), font_size=22
+            ),
         ]
 
     def _open(self, vow_id: str) -> None:

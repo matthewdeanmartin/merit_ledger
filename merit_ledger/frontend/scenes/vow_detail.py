@@ -101,6 +101,7 @@ class VowDetailScene(MainScene):
 
     def _make_action(self, label: str):  # type: ignore[no-untyped-def]
         """Return a click handler for an action label."""
+
         def run() -> None:
             self._do(label)
 
@@ -180,5 +181,7 @@ class VowDetailScene(MainScene):
             rect = pygame.Rect(20, y, surface.get_width() - 40, 40)
             cards.draw_card(surface, rect, p, radius=8)
             text_ui.draw_text(surface, str(e.get("title", e.get("entry_type", ""))), (36, y + 10), 22, p.text)
-            text_ui.draw_text(surface, str(e.get("occurred_at", ""))[:10], (surface.get_width() - 140, y + 10), 20, p.text_muted)
+            text_ui.draw_text(
+                surface, str(e.get("occurred_at", ""))[:10], (surface.get_width() - 140, y + 10), 20, p.text_muted
+            )
             y += 48

@@ -57,7 +57,5 @@ def test_never_exceeds_cap(base: int, cap: int, already: int) -> None:
 
 @given(override=st.integers(min_value=0, max_value=1000))
 def test_override_respected_without_cap(override: int) -> None:
-    awarded = compute_points(
-        ScoreRequest(points_mode="points", base_points=99, manual_override=override)
-    )
+    awarded = compute_points(ScoreRequest(points_mode="points", base_points=99, manual_override=override))
     assert awarded == override

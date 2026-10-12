@@ -14,10 +14,10 @@ from merit_ledger.backend.repository.base import MeritRepository
 from merit_ledger.backend.repository.item_keys import (
     VOW_SK_PREFIX,
     to_vow_item,
+    user_pk,
     vow_from_item,
     vow_sk,
     vow_status_gsi1pk,
-    user_pk,
 )
 from merit_ledger.backend.services import entry_service, profile_service
 from merit_ledger.local.config import DEFAULT_USER_ID
@@ -48,9 +48,7 @@ def get_vow(repo: MeritRepository, vow_id: str, user_id: str = DEFAULT_USER_ID) 
     return vow_from_item(item) if item else None
 
 
-def list_vows(
-    repo: MeritRepository, *, status: str | None = None, user_id: str = DEFAULT_USER_ID
-) -> list[Vow]:
+def list_vows(repo: MeritRepository, *, status: str | None = None, user_id: str = DEFAULT_USER_ID) -> list[Vow]:
     """List vows, optionally filtered by status via GSI1."""
     if status is not None:
         items = repo.query_gsi1(vow_status_gsi1pk(user_id, status))
@@ -98,9 +96,7 @@ def _transition(vow: Vow, action: VowAction) -> None:
     vow.status = vow_state.apply(action, vow.status)
 
 
-def complete_vow(
-    repo: MeritRepository, vow: Vow, *, reflection: str | None = None
-) -> tuple[Vow, LedgerEntry]:
+def complete_vow(repo: MeritRepository, vow: Vow, *, reflection: str | None = None) -> tuple[Vow, LedgerEntry]:
     """Complete a positive vow: award points, bump streak, record entry (spec §5.3).
 
     Completion is scored through the entry service so the user's points mode is honored;
@@ -118,14 +114,22 @@ def complete_vow(
     # completion (negative vow) closes the repair loop.
     if vow.vow_type == "positive":
         entry = _record(
-            repo, vow, "vow_completed", title=f"Completed: {vow.name}",
-            manual_points=None, points=vow.default_points, reflection=reflection,
+            repo,
+            vow,
+            "vow_completed",
+            title=f"Completed: {vow.name}",
+            manual_points=None,
+            points=vow.default_points,
+            reflection=reflection,
         )
         _save(repo, vow)  # streak/date persisted; status stays active
     else:
         _transition(vow, "complete")
         entry = _record(
-            repo, vow, "vow_completed", title=f"Repair completed: {vow.name}",
+            repo,
+            vow,
+            "vow_completed",
+            title=f"Repair completed: {vow.name}",
             reflection=reflection,
         )
         _save(repo, vow)
@@ -189,9 +193,7 @@ def resume_vow(
         vow.frequency = new_frequency
     if new_points is not None:
         vow.default_points = new_points
-    entry = _record(
-        repo, vow, "vow_resumed", title=f"Resumed: {vow.name}", reflection=renewed_intention
-    )
+    entry = _record(repo, vow, "vow_resumed", title=f"Resumed: {vow.name}", reflection=renewed_intention)
     _save(repo, vow)
     return vow, entry
 

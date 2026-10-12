@@ -68,12 +68,14 @@ class RepentanceScene(MainScene):
         self._reflection = TextInput(
             pygame.Rect(20, self.BODY_TOP + 230, 900, 40),
             placeholder="optional reflection — keep it general, no names or specifics",
-            max_length=140, font_size=22,
+            max_length=140,
+            font_size=22,
         )
         self._intention = TextInput(
             pygame.Rect(20, self.BODY_TOP + 290, 900, 40),
             placeholder="repair intention — e.g. 'I will pause before replying'",
-            max_length=140, font_size=22,
+            max_length=140,
+            font_size=22,
         )
         self._save_button = Button(
             "Return to practice", pygame.Rect(20, self.BODY_TOP + 344, 280, 46), self._save, font_size=24

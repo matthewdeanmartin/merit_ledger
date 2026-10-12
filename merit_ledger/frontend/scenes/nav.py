@@ -58,13 +58,12 @@ class MainScene(Scene):
         x = 20
         for label, module, cls in TABS:
             rect = pygame.Rect(x, self.NAV_Y, 110, 40)
-            self._nav_buttons.append(
-                Button(label, rect, self._make_nav(label, module, cls), font_size=20)
-            )
+            self._nav_buttons.append(Button(label, rect, self._make_nav(label, module, cls), font_size=20))
             x += 116
 
     def _make_nav(self, label: str, module: str, cls: str):  # type: ignore[no-untyped-def]
         """Return a click handler that navigates unless already on that tab."""
+
         def go() -> None:
             if label != self.active_tab:
                 navigate(self.app, module, cls)

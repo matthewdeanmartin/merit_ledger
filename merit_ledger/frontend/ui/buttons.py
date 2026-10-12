@@ -39,11 +39,7 @@ class Button:
         """Update hover state and fire ``on_click`` on a left-button release inside the rect."""
         if event.type == pygame.MOUSEMOTION:
             self._hover = self.rect.collidepoint(event.pos)
-        elif (
-            event.type == pygame.MOUSEBUTTONUP
-            and event.button == 1
-            and self.rect.collidepoint(event.pos)
-        ):
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.rect.collidepoint(event.pos):
             self.on_click()
 
     def draw(self, surface: pygame.Surface, palette: Palette) -> None:
@@ -51,6 +47,4 @@ class Button:
         base = palette.accent
         color = tuple(min(255, c + 25) for c in base) if self._hover else base
         pygame.draw.rect(surface, color, self.rect, border_radius=12)
-        text_ui.draw_text_center(
-            surface, self.label, self.rect.center, self.font_size, palette.card
-        )
+        text_ui.draw_text_center(surface, self.label, self.rect.center, self.font_size, palette.card)

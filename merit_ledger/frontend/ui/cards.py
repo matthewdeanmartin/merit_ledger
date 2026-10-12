@@ -21,8 +21,6 @@ def draw_vertical_gradient(surface: pygame.Surface, top: RGB, bottom: RGB) -> No
         pygame.draw.line(surface, color, (0, y), (width, y))
 
 
-def draw_card(
-    surface: pygame.Surface, rect: pygame.Rect, palette: Palette, radius: int = 14
-) -> None:
+def draw_card(surface: pygame.Surface, rect: pygame.Rect, palette: Palette, radius: int = 14) -> None:
     """Draw a rounded card background using the palette's card color."""
     pygame.draw.rect(surface, palette.card, rect, border_radius=radius)

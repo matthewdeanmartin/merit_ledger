@@ -35,24 +35,44 @@ _DEFAULT = Palette(
 
 _THEMES: dict[str, Palette] = {
     "ink_wash": Palette(  # Zen — stone, paper, moss
-        bg_top=(238, 236, 230), bg_bottom=(214, 212, 205), card=(250, 249, 245),
-        text=(44, 46, 44), text_muted=(120, 122, 118), accent=(90, 110, 96),
+        bg_top=(238, 236, 230),
+        bg_bottom=(214, 212, 205),
+        card=(250, 249, 245),
+        text=(44, 46, 44),
+        text_muted=(120, 122, 118),
+        accent=(90, 110, 96),
     ),
     "temple_gold": Palette(  # Chinese Mahayana — warm gold, deep red
-        bg_top=(58, 26, 24), bg_bottom=(38, 16, 16), card=(80, 40, 34),
-        text=(244, 232, 210), text_muted=(206, 176, 140), accent=(214, 168, 78),
+        bg_top=(58, 26, 24),
+        bg_bottom=(38, 16, 16),
+        card=(80, 40, 34),
+        text=(244, 232, 210),
+        text_muted=(206, 176, 140),
+        accent=(214, 168, 78),
     ),
     "dawn_gradient": Palette(  # Nichiren — dawn
-        bg_top=(90, 70, 120), bg_bottom=(210, 130, 110), card=(70, 58, 92),
-        text=(248, 244, 238), text_muted=(212, 200, 214), accent=(244, 196, 120),
+        bg_top=(90, 70, 120),
+        bg_bottom=(210, 130, 110),
+        card=(70, 58, 92),
+        text=(248, 244, 238),
+        text_muted=(212, 200, 214),
+        accent=(244, 196, 120),
     ),
     "sunset_gold": Palette(  # Pure Land — sunset gold, blue/gold
-        bg_top=(48, 62, 110), bg_bottom=(196, 138, 78), card=(44, 54, 92),
-        text=(250, 246, 236), text_muted=(206, 208, 220), accent=(240, 206, 130),
+        bg_top=(48, 62, 110),
+        bg_bottom=(196, 138, 78),
+        card=(44, 54, 92),
+        text=(250, 246, 236),
+        text_muted=(206, 208, 220),
+        accent=(240, 206, 130),
     ),
     "calm_blue": Palette(  # Secular — calm blue, green, journal
-        bg_top=(232, 240, 244), bg_bottom=(210, 224, 228), card=(250, 252, 252),
-        text=(38, 50, 56), text_muted=(110, 128, 134), accent=(80, 150, 150),
+        bg_top=(232, 240, 244),
+        bg_bottom=(210, 224, 228),
+        card=(250, 252, 252),
+        text=(38, 50, 56),
+        text_muted=(110, 128, 134),
+        accent=(80, 150, 150),
     ),
 }
 
@@ -65,6 +85,10 @@ def palette_for_theme(theme: str) -> Palette:
 def high_contrast(palette: Palette) -> Palette:
     """Return a higher-contrast variant (spec §17.4 accessibility)."""
     return Palette(
-        bg_top=(0, 0, 0), bg_bottom=(0, 0, 0), card=(20, 20, 20),
-        text=(255, 255, 255), text_muted=(220, 220, 220), accent=palette.accent,
+        bg_top=(0, 0, 0),
+        bg_bottom=(0, 0, 0),
+        card=(20, 20, 20),
+        text=(255, 255, 255),
+        text_muted=(220, 220, 220),
+        accent=palette.accent,
     )

@@ -31,9 +31,7 @@ class InMemoryMeritRepository(MeritRepository):
     def query_pk(self, pk: str, sk_begins_with: str | None = None) -> list[MeritItem]:
         """Return items in partition ``pk`` filtered by sk prefix, sorted by sk."""
         results = [
-            i.model_copy(deep=True)
-            for i in self._store.values()
-            if i.pk == pk and _prefix_ok(i.sk, sk_begins_with)
+            i.model_copy(deep=True) for i in self._store.values() if i.pk == pk and _prefix_ok(i.sk, sk_begins_with)
         ]
         return sorted(results, key=lambda i: i.sk)
 
@@ -61,10 +59,7 @@ class InMemoryMeritRepository(MeritRepository):
 
     def scan_all(self) -> list[MeritItem]:
         """Return deep copies of all items, sorted by (pk, sk)."""
-        return [
-            self._store[key].model_copy(deep=True)
-            for key in sorted(self._store.keys())
-        ]
+        return [self._store[key].model_copy(deep=True) for key in sorted(self._store.keys())]
 
     def clear(self) -> int:
         """Delete every item and return the number removed."""

@@ -20,9 +20,7 @@ def list_custom_templates(repo: MeritRepository, user_id: str = DEFAULT_USER_ID)
     return [template_from_item(i) for i in items]
 
 
-def list_templates(
-    repo: MeritRepository, tradition_id: str, user_id: str = DEFAULT_USER_ID
-) -> list[PracticeTemplate]:
+def list_templates(repo: MeritRepository, tradition_id: str, user_id: str = DEFAULT_USER_ID) -> list[PracticeTemplate]:
     """Return pack-suggested templates for ``tradition_id`` merged with custom ones.
 
     Custom templates override pack templates that share a ``template_id``.
