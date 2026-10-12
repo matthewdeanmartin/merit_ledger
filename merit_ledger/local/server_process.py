@@ -11,7 +11,7 @@ from __future__ import annotations
 import threading
 import time
 
-import httpx
+import httpx2
 import uvicorn
 
 from merit_ledger.local.config import BACKEND_HOST, BACKEND_PORT, BACKEND_URL
@@ -55,10 +55,10 @@ def wait_for_health(url: str = BACKEND_URL, timeout: float = 10.0) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
-            resp = httpx.get(f"{url}/health", timeout=1.0)
+            resp = httpx2.get(f"{url}/health", timeout=1.0)
             if resp.status_code == 200 and resp.json().get("status") == "ok":
                 return True
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             pass
         time.sleep(0.1)
     return False

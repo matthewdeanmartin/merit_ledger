@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import httpx
+import httpx2
 
 from merit_ledger.local.config import BACKEND_URL
 
@@ -16,15 +16,15 @@ from merit_ledger.local.config import BACKEND_URL
 class ApiClient:
     """Small wrapper over the local backend's HTTP API."""
 
-    def __init__(self, base_url: str = BACKEND_URL, client: httpx.Client | None = None) -> None:
+    def __init__(self, base_url: str = BACKEND_URL, client: httpx2.Client | None = None) -> None:
         """Create a client.
 
         Args:
             base_url: Backend base URL.
-            client: Optional injected httpx client (tests pass a TestClient-like object).
+            client: Optional injected httpx2 client (tests pass a TestClient-like object).
         """
         self._base = base_url.rstrip("/")
-        self._client = client or httpx.Client(base_url=self._base, timeout=5.0)
+        self._client = client or httpx2.Client(base_url=self._base, timeout=5.0)
 
     # --- profile / settings / traditions ------------------------------------
 

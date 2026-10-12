@@ -12,7 +12,7 @@ from merit_ledger.frontend.api_client import ApiClient
 
 @pytest.fixture
 def api() -> ApiClient:
-    """An ApiClient wired to a TestClient (httpx-compatible) over a fresh app."""
+    """An ApiClient wired to a TestClient (httpx2-compatible) over a fresh app."""
     app = create_app(repo=InMemoryMeritRepository())
     return ApiClient(client=TestClient(app))
 

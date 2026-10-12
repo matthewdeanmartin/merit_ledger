@@ -21,7 +21,7 @@ classifiers = [
 ]
 dependencies = [
     "fastapi>=0.139.0",
-    "httpx>=0.28.1",
+    "httpx2>=2.0,<3",
     "platformdirs>=4.10.0",
     "pydantic>=2.13.4",
     "pygame-ce>=2.5.7",
