@@ -75,3 +75,22 @@ look at placement first.
   - `/api/v1/sys` (heap, Wi-Fi, TLS)
   - `/api/v1/log.txt` (recent log, including the PIN-hash timing at boot)
   - `/api/v1/admin/storage` (admin)
+  - `/.well-known/ops/health` (public checks for mastomini-bots' `sre`: heap, Wi-Fi, clock,
+    `store.people`, `store.slot`, and `sd.space` / `sd.journal` when a card is present)
+- Windows curl needs `--ssl-no-revoke` for HTTPS checks against the household CA (it publishes no
+  revocation list). It still verifies the chain and hostname; never use `-k`.
+
+## Deployments
+
+### 2026-10-19: ops health endpoint (SRE sprint 0)
+
+- Owner attached the board for this flash. COM5, MAC `28:84:85:b1:70:e4`, 16 MB. `make check`
+  passed; `make board-check` confirmed the Merit Ledger partition table (its RTS reset restarted
+  the board, which came back by itself).
+- `make update`: app 2,381,152 / 6,291,456 bytes (37.8%), written at `0x10000` only, hash
+  verified. No backup (owner's choice; slow USB).
+- Before: build `9ee1a2e+`. After: build `970ff1d+`, setup done, clock synced; HTTP and strict
+  HTTPS status 200 at `192.168.1.151`.
+- Health all `ok`: 68 KiB internal free (lowest 65 KiB), largest block 31 KiB, −68 dBm, 1/16
+  people, newest snapshot slot, SD card present (about 31 GB, almost empty), journal intact.
+- Logs: `.local/ops-deploy-*.log`.

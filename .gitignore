@@ -78,3 +78,5 @@ meritledger_ui/.angular/
 meritledger_ui/dist/
 # Server private keys: reissue with `make certs` (the household CA stays elsewhere)
 *.key
+.local
+
