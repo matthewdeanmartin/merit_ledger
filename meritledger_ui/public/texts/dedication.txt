@@ -1,0 +1,24 @@
+---
+id: dedication
+title: Dedication of merit
+tradition: mahayana
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: MIT, with the Merit Ledger repository (our own wording)
+source: Our own
+---
+
+# Dedication of merit
+
+May whatever good this practice has done
+not stop with me.
+
+May it reach the people I love, the people I find hard,
+and the people I will never meet.
+
+May those who suffer find ease,
+those who are afraid find courage,
+and those who are lost find their way.
+
+May we all wake up, together.

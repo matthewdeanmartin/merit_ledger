@@ -1,0 +1,21 @@
+---
+id: repentance-verse
+title: Verse of repentance
+tradition: mahayana
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: Chinese: CBETA (Taipei), CC BY-NC-SA 4.0; English: ours (MIT)
+source: Avataṃsaka Sūtra, 40-fascicle version (tr. Prajña), T293 fasc. 40, CBETA T10n0293_p0847a16–a17
+note: Many chanting books begin 往昔所造; the Taishō reads 我昔所造.
+---
+
+# Verse of repentance
+
+All the harm I have done in the past,
+born of greed, anger and confusion that have no beginning,
+arising from body, speech and mind:
+I now acknowledge it all, and repent.
+
+我昔所造諸惡業，皆由無始貪恚癡，
+從身語意之所生，一切我今皆懺悔。

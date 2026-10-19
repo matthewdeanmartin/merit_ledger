@@ -1,0 +1,20 @@
+---
+id: three-refuges
+title: The Three Refuges
+tradition: mahayana
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: MIT, with the Merit Ledger repository (our own wording)
+source: Traditional (our own wording)
+---
+
+# The Three Refuges
+
+I take refuge in the Buddha: the one who woke up, and showed that waking up is possible.
+
+I take refuge in the Dharma: the way things are, and the teaching that shows it.
+
+I take refuge in the Sangha: everyone who practises it, here and everywhere.
+
+*Three times.*

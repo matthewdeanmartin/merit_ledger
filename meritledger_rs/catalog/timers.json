@@ -1,0 +1,10 @@
+{
+  "timers": [
+    { "key": "sit10", "name": "10-minute sit", "segments": [{ "kind": "sit", "minutes": 10 }], "open_strikes": 3, "interval_minutes": 0, "close_strikes": 1, "count_target": 0, "logs_as": "meditation", "timbre": "bowl" },
+    { "key": "sit20", "name": "20-minute sit", "segments": [{ "kind": "sit", "minutes": 20 }], "open_strikes": 3, "interval_minutes": 0, "close_strikes": 1, "count_target": 0, "logs_as": "meditation", "timbre": "bowl" },
+    { "key": "sit30", "name": "30-minute sit", "segments": [{ "kind": "sit", "minutes": 30 }], "open_strikes": 3, "interval_minutes": 10, "close_strikes": 1, "count_target": 0, "logs_as": "meditation", "timbre": "bowl" },
+    { "key": "sesshin", "name": "Sit, walk, sit (25 + 5 + 25)", "segments": [{ "kind": "sit", "minutes": 25 }, { "kind": "walk", "minutes": 5 }, { "kind": "sit", "minutes": 25 }], "open_strikes": 3, "interval_minutes": 0, "close_strikes": 3, "count_target": 0, "logs_as": "meditation", "timbre": "bell" },
+    { "key": "mala108", "name": "108 daimoku (mala)", "segments": [], "open_strikes": 1, "interval_minutes": 0, "close_strikes": 3, "count_target": 108, "logs_as": "daimoku", "timbre": "block" },
+    { "key": "prostrations108", "name": "108 prostrations", "segments": [], "open_strikes": 1, "interval_minutes": 0, "close_strikes": 3, "count_target": 108, "logs_as": "prostrations", "timbre": "block" }
+  ]
+}

@@ -68,3 +68,13 @@ docs/_build/
 *.swo
 *~
 .DS_Store
+
+# v2 (Rust + Angular)
+meritledger_rs/target/
+meritledger_rs/.embuild/
+meritledger_rs/.local/
+meritledger_ui/node_modules/
+meritledger_ui/.angular/
+meritledger_ui/dist/
+# Server private keys: reissue with `make certs` (the household CA stays elsewhere)
+*.key

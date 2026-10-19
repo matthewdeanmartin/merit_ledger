@@ -1,0 +1,23 @@
+---
+id: daimoku
+title: Nam-myoho-renge-kyo (daimoku)
+tradition: nichiren
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: MIT, with the Merit Ledger repository (our own wording)
+source: The title of the Lotus Sutra, 妙法蓮華經, with 南無 (devotion)
+---
+
+# Nam-myoho-renge-kyo
+
+南無妙法蓮華經
+
+Chanting the title of the Lotus Sutra: *devotion to the Lotus Sutra of the wonderful Dharma*.
+
+- **Nam:** devotion, taking refuge.
+- **Myoho:** the wonderful Dharma, the way things truly are.
+- **Renge:** the lotus, which flowers and seeds at once: cause and effect together.
+- **Kyo:** the sutra, the teaching, the thread that runs through life.
+
+Chant it with a clear voice and steady rhythm, eyes on the scroll or on the wall in front of you. The teaching it names is that every life can awaken, starting with this one.

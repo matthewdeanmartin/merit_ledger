@@ -1,342 +1,90 @@
-UV ?= uv
-MAKEFLAGS += --no-print-directory
-export PYTHONUTF8 := 1
+SHELL := bash
+.DEFAULT_GOAL := help
 
-PACKAGE := merit_ledger
-PYTHON_TARGETS := merit_ledger tests
-PYLINT_MAIN_TARGETS := merit_ledger
-PYLINT_TEST_TARGETS := tests
-MARKDOWN_TARGETS := README.md CHANGELOG.md AGENTS.md docs
-YAML_TARGETS := .github mkdocs.yml .readthedocs.yaml
-GHA_WORKFLOWS := .github/workflows
-ABOUT_FILE := merit_ledger/__about__.py
+API := meritledger_rs
+UI := meritledger_ui
+MF := ../microcontroller/miniframework
+CARGO ?= cargo
 
-.PHONY: \
-	sync \
-	pre-commit-install \
-	run backend backend-dev where-data print-url \
-	format format-python format-yaml format-markdown \
-	format-check format-check-python format-check-yaml format-check-markdown \
-	lint lint-check ruff-fix ruff-check pylint pylint-tests pylint-spelling \
-	spell \
-	docs-check docs-check-docstrings docs-check-links docs-check-pydoctest griffe \
-	build-docs \
-	dead-code vulture deadcode \
-	explore refurb crosshair deptry import-linter \
-	security bandit audit \
-	smoke test test-ci tox \
-	typecheck typecheck-mypy \
-	metadata metadata-check version-check dev-status \
-	gha-validate gha-pin gha-upgrade publish-gha \
-	prerelease publish-check publish \
-	check check-ci \
-	help
+.PHONY: help test test-rust test-web check run web web-dev run-bundle certs firmware board-check flash update gate legacy-test
 
 help:
-	@echo "Targets:"
-	@echo "  sync                   Install / refresh dependencies"
-	@echo "  pre-commit-install     Install pre-commit hooks into .git/hooks"
-	@echo ""
-	@echo "  run                    Launch the desktop app (backend + Pygame window)"
-	@echo "  backend                Start the backend only (no window), wait for /health, exit"
-	@echo "  backend-dev            Run the FastAPI backend with autoreload (dev, Ctrl-C to stop)"
-	@echo "  where-data             Print the local data directory + SQLite db path"
-	@echo "  print-url              Print the local backend URL"
-	@echo ""
-	@echo "  format                 Auto-format all code and markup"
-	@echo "  format-check           Check formatting without changes"
-	@echo "  lint                   Ruff fix + pylint (main + tests)"
-	@echo "  lint-check             Ruff check + pylint (read-only)"
-	@echo "  spell                  Spell-check code, docs, and README"
-	@echo ""
-	@echo "  test                   Run pytest suite with coverage"
-	@echo "  test-ci                Run pytest -n auto (parallel, for CI)"
-	@echo "  tox                    Run tests across py310-py313 via tox-uv"
-	@echo "  smoke                  CLI smoke checks (--help, --version)"
-	@echo ""
-	@echo "  typecheck              Run mypy strict"
-	@echo "  security               Run bandit + uv audit + pip-audit"
-	@echo ""
-	@echo "  metadata               Regenerate __about__.py from pyproject.toml"
-	@echo "  metadata-check         Verify __about__.py is in sync"
-	@echo "  version-check          Verify version consistency (jiggle_version)"
-	@echo "  dev-status             Verify Development Status classifier"
-	@echo ""
-	@echo "  docs-check             All doc checks (docstrings + links + pydoctest)"
-	@echo "  docs-check-docstrings  interrogate docstring coverage"
-	@echo "  docs-check-pydoctest   pydoctest docstring example tests"
-	@echo "  docs-check-links       linkcheckMarkdown"
-	@echo "  griffe                 griffe API surface check (advisory)"
-	@echo "  build-docs             Build mkdocs documentation"
-	@echo ""
-	@echo "  dead-code              vulture + deadcode (advisory, non-blocking)"
-	@echo ""
-	@echo "  explore                All four exploratory tools in sequence"
-	@echo "  refurb                 Modern Python idiom suggestions (advisory)"
-	@echo "  crosshair              Symbolic execution / contract checking (advisory)"
-	@echo "  deptry                 Unused / missing / misplaced deps (advisory)"
-	@echo "  import-linter          Enforce import architecture contracts (advisory)"
-	@echo ""
-	@echo "  gha-validate           YAML parse + artifact handoff check + zizmor"
-	@echo "  gha-pin                Pin GHA action refs to commit SHAs"
-	@echo "  gha-upgrade            Pin + validate (gha-pin then gha-validate)"
-	@echo "  publish-gha            Dispatch the GitHub Actions publish workflow"
-	@echo ""
-	@echo "  check                  Full local quality gate"
-	@echo "  check-ci               CI quality gate (no formatting mutations)"
-	@echo "  prerelease             All checks before publishing"
-	@echo "  publish-check          Build wheel and list dist/ contents"
-	@echo "  publish                Publish via uv (OIDC or UV_PUBLISH_TOKEN)"
+	@printf '%s\n' \
+	  'Merit Ledger v2: Rust API ($(API)/) + Angular UI ($(UI)/) on an ESP32-S3.' \
+	  'Needs the sibling repo C:\github\microcontroller (miniframework).' \
+	  '' \
+	  'make test        Rust tests and a UI type check + unit tests' \
+	  'make check       test + fmt + clippy + production UI build' \
+	  'make run         API on http://127.0.0.1:8089' \
+	  'make web-dev     Angular dev server on http://localhost:4200 (proxies /api to :8089)' \
+	  'make run-bundle  build the UI and serve UI + API from :8089' \
+	  '' \
+	  'Board (Waveshare ESP32-S3-Touch-LCD-1.47; see DEPLOY.md):' \
+	  'make certs       issue meritledger.local from the household CA' \
+	  'make firmware    build only, never touches a board; TRANSPORT=http|https|http2 (default http2), GATE=1 for the gate' \
+	  'make board-check PORT=COMn   read-only: identity, and would `make update` be allowed?' \
+	  'make flash PORT=COMn         FIRST INSTALL / REPAVE: erases the whole board' \
+	  'make update PORT=COMn        app only; refuses unless the board has our partition table' \
+	  'make gate URL=http://<board> Sprint 1 load, outbound HTTPS and SD measurement' \
+	  '' \
+	  'v1 (archived Python app): cd pygameui && uv run make help' \
+	  'make legacy-test run the v1 tests'
 
-sync:
-	@$(UV) sync
+test: test-rust test-web
 
-pre-commit-install:
-	@$(UV) run pre-commit install
+test-rust:
+	cd $(API) && $(CARGO) test
+	cd $(API) && $(CARGO) test --features gate gate
 
-# ── Run the app ───────────────────────────────────────────────────────────────
-# `make run` is the one you want: it starts the local FastAPI backend and opens the
-# Pygame window. Everything is local — no account, no network, no cloud.
+test-web:
+	cd $(UI) && npx tsc -p tsconfig.app.json --noEmit && npx vitest run
+
+check: test
+	cd $(API) && $(CARGO) fmt --check && $(CARGO) clippy --all-targets -- -D warnings
+	cd $(API) && $(CARGO) clippy --all-targets --features gate -- -D warnings
+	cd $(UI) && npx ng build
 
 run:
-	@$(UV) run merit_ledger
+	cd $(API) && $(CARGO) run
 
-# Backend only: starts the API, waits for /health, then exits. Useful to confirm the
-# server boots without opening a window (also what CI can smoke-test).
-backend:
-	@$(UV) run merit_ledger --backend-only
+web-dev:
+	cd $(UI) && npx ng serve
 
-# Backend with autoreload for development. Serves http://127.0.0.1:8765 until Ctrl-C.
-# Explore the API at http://127.0.0.1:8765/docs (FastAPI's built-in Swagger UI).
-backend-dev:
-	@$(UV) run uvicorn merit_ledger.backend.main:app --host 127.0.0.1 --port 8765 --reload
+web:
+	cd $(UI) && npx ng build
+	node $(MF)/tools/bundle-web.mjs $(UI)/dist/meritledger/browser $(API)/.embuild/web
 
-# Show where your ledger lives on disk (created on first run).
-where-data:
-	@$(UV) run python -c "from merit_ledger.local.data_dir import data_dir, db_path; print('data dir:', data_dir()); print('database:', db_path())"
+run-bundle: web
+	cd $(API) && $(CARGO) run --features bundled-web
 
-print-url:
-	@$(UV) run python -c "from merit_ledger.local.config import BACKEND_URL; print(BACKEND_URL)"
+certs:
+	bash $(MF)/tools/certs.sh $(API) meritledger
 
-# ── Formatting ────────────────────────────────────────────────────────────────
+TRANSPORT ?= http2
+firmware: web
+	@case "$(TRANSPORT)" in http|https|http2) ;; *) echo 'TRANSPORT must be http, https or http2' >&2; exit 2;; esac
+	features="$(filter-out http,$(TRANSPORT))"; \
+	if [ -n "$(GATE)" ]; then features="$${features:+$$features,}gate"; fi; \
+	bash tools/build-s3.sh "$$features"
 
-format: format-python format-yaml format-markdown
+ESP_PYTHON ?= C:/Espressif/python_env/idf5.5_py3.11_env/Scripts/python.exe
+NEED_PORT = @[ -n "$(PORT)" ] || { echo 'Set PORT=COMn (the S3 enumerates as 303A:1001).' >&2; exit 2; }
 
-format-python:
-	@$(UV) run isort $(PYTHON_TARGETS)
-	@$(UV) run black $(PYTHON_TARGETS)
-	@$(UV) run ruff check --fix --quiet $(PYTHON_TARGETS)
-	@$(UV) run black $(PYTHON_TARGETS)
+board-check:
+	$(NEED_PORT)
+	"$(ESP_PYTHON)" tools/deploy-s3.py --port "$(PORT)" --check
 
-format-yaml:
-	@$(UV) run yamlfix $(YAML_TARGETS)
+flash:
+	$(NEED_PORT)
+	"$(ESP_PYTHON)" tools/deploy-s3.py --port "$(PORT)" --replace
 
-format-markdown:
-	@$(UV) run mdformat $(MARKDOWN_TARGETS)
+update:
+	$(NEED_PORT)
+	"$(ESP_PYTHON)" tools/deploy-s3.py --port "$(PORT)" --update
 
-format-check: format-check-python format-check-yaml format-check-markdown
+gate:
+	@[ -n "$(URL)" ] || { echo 'Set URL=http://<board ip>' >&2; exit 2; }
+	uv run tools/gate.py --url "$(URL)" --ca $(API)/certs/household-ca.crt $(ARGS)
 
-format-check-python:
-	@$(UV) run isort --check-only $(PYTHON_TARGETS)
-	@$(UV) run black --check $(PYTHON_TARGETS)
-	@$(UV) run ruff check --quiet $(PYTHON_TARGETS)
-
-format-check-yaml:
-	@$(UV) run yamlfix --check $(YAML_TARGETS)
-
-format-check-markdown:
-	@$(UV) run mdformat --check $(MARKDOWN_TARGETS)
-
-# ── Linting ───────────────────────────────────────────────────────────────────
-
-lint: ruff-fix pylint pylint-tests
-
-lint-check: ruff-check pylint pylint-tests
-
-ruff-fix:
-	@$(UV) run ruff check --fix --quiet $(PYTHON_TARGETS)
-
-ruff-check:
-	@$(UV) run ruff check --quiet $(PYTHON_TARGETS)
-
-pylint:
-	@$(UV) run pylint --score=n --reports=n --rcfile=.pylintrc $(PYLINT_MAIN_TARGETS)
-
-pylint-tests:
-	@$(UV) run pylint --score=n --reports=n --rcfile=.pylintrc_tests $(PYLINT_TEST_TARGETS)
-
-pylint-spelling:
-	@$(UV) run pylint --score=n --reports=n --rcfile=.pylintrc_spell $(PYLINT_MAIN_TARGETS)
-
-# ── Spell check ───────────────────────────────────────────────────────────────
-
-spell: pylint-spelling
-	@$(UV) run codespell --ignore-words=private_dictionary.txt \
-		$(PACKAGE) tests README.md CHANGELOG.md AGENTS.md docs
-
-# ── Documentation checks ─────────────────────────────────────────────────────
-
-docs-check: docs-check-docstrings docs-check-pydoctest docs-check-links
-
-docs-check-docstrings:
-	@$(UV) run interrogate $(PACKAGE) --verbose --fail-under 70
-
-docs-check-pydoctest:
-	@$(UV) run pydoctest --config .pydoctest.json \
-		| grep -v "__init__" | grep -v "__main__" | grep -v "Unable to parse" || true
-
-docs-check-links:
-	@$(UV) run linkcheckMarkdown README.md || true
-	@$(UV) run mdformat --check README.md CHANGELOG.md docs/*.md || true
-
-griffe:
-	@echo "=== griffe API surface check (advisory) ==="
-	@$(UV) run griffe check $(PACKAGE) || true
-
-build-docs:
-	@$(UV) run mkdocs build
-
-# ── Dead code analysis (advisory — non-blocking) ─────────────────────────────
-
-dead-code: vulture deadcode
-
-vulture:
-	@echo "=== vulture (advisory) ==="
-	@$(UV) run vulture $(PACKAGE) --min-confidence 80 || true
-
-deadcode:
-	@echo "=== deadcode (advisory) ==="
-	@$(UV) run deadcode $(PACKAGE) || true
-
-# ── Exploratory / advisory tools (not wired into any gate) ───────────────────
-# Run these when you're curious, not as a blocking check.
-# False-positive rate is high enough in Python that none of these should fail CI.
-
-explore: refurb crosshair deptry import-linter
-
-refurb:
-	@echo "=== refurb: modern Python idiom suggestions (advisory) ==="
-	@$(UV) run refurb $(PACKAGE) || true
-
-crosshair:
-	@echo "=== crosshair: symbolic execution / contract checking (advisory) ==="
-	@$(UV) run crosshair check $(PACKAGE) || true
-
-deptry:
-	@echo "=== deptry: unused / missing / misplaced dependencies (advisory) ==="
-	@$(UV) run deptry . || true
-
-import-linter:
-	@echo "=== import-linter: import architecture contracts (advisory) ==="
-	@echo "    Requires a [importlinter] section in pyproject.toml or .importlinter"
-	@$(UV) run lint-imports || true
-
-# ── Security ──────────────────────────────────────────────────────────────────
-
-security: bandit audit
-
-bandit:
-	@$(UV) run bandit -q -c pyproject.toml -r $(PACKAGE)
-
-audit:
-	@echo "=== uv audit ==="
-	@$(UV) audit
-	@echo "=== pip-audit ==="
-	@$(UV) run pip-audit
-
-# ── Tests ─────────────────────────────────────────────────────────────────────
-
-smoke:
-	@$(UV) run bash scripts/basic_checks.sh
-
-test:
-	@$(UV) run pytest -q \
-		--cov=$(PACKAGE) \
-		--cov-report=html \
-		--junitxml=junit.xml \
-		--timeout=60
-
-test-ci:
-	@$(UV) run pytest -q -n auto --dist=loadfile \
-		--cov=$(PACKAGE) \
-		--cov-report=xml \
-		--junitxml=junit.xml \
-		--timeout=60
-
-tox:
-	@$(UV) run tox
-
-# ── Type checking ─────────────────────────────────────────────────────────────
-
-typecheck: typecheck-mypy
-
-typecheck-mypy:
-	@$(UV) run mypy --hide-error-context $(PACKAGE) tests
-
-# ── Metadata / version ───────────────────────────────────────────────────────
-
-metadata:
-	@$(UV) run metametameta pep621 --name $(PACKAGE) --source pyproject.toml --output $(ABOUT_FILE)
-	@$(UV) run isort $(ABOUT_FILE)
-	@$(UV) run black $(ABOUT_FILE)
-
-metadata-check:
-	@$(UV) run metametameta sync-check --output $(ABOUT_FILE)
-
-version-check:
-	@$(UV) run jiggle_version check
-
-dev-status:
-	@$(UV) run troml-dev-status validate .
-
-# ── GitHub Actions maintenance ───────────────────────────────────────────────
-
-gha-validate:
-	@echo "Validating GitHub Actions workflows"
-	@$(UV) run python -c "import pathlib, yaml; [yaml.safe_load(p.read_text(encoding='utf-8')) for p in pathlib.Path('$(GHA_WORKFLOWS)').glob('*.yml')]; print('YAML parse OK')"
-	@$(UV) run python -c "\
-from pathlib import Path; import yaml; \
-data=yaml.safe_load(Path('$(GHA_WORKFLOWS)/publish_to_pypi.yml').read_text(encoding='utf-8')); \
-build_steps=data['jobs']['build']['steps']; \
-publish_steps=data['jobs']['pypi-publish']['steps']; \
-up=next(s for s in build_steps if s.get('uses','').startswith('actions/upload-artifact@')); \
-down=next(s for s in publish_steps if s.get('uses','').startswith('actions/download-artifact@')); \
-assert up['with']['name']==down['with']['name']=='packages'; \
-assert up['with']['path']==down['with']['path']=='dist/'; \
-print('Artifact handoff OK:', up['uses'], '->', down['uses'])"
-	@uvx zizmor --no-progress --no-exit-codes .
-
-gha-pin:
-	@echo "Pinning GitHub Actions to current commit SHAs"
-	@$(UV) run python -c "import os, subprocess, sys; \
-token=os.environ.get('GITHUB_TOKEN') or subprocess.run(['gh', 'auth', 'token'], capture_output=True, text=True).stdout.strip(); \
-assert token, 'Set GITHUB_TOKEN or run: gh auth login'; \
-env=dict(os.environ, GITHUB_TOKEN=token); \
-raise SystemExit(subprocess.run(['gha-update'], env=env).returncode)"
-
-gha-upgrade: gha-pin gha-validate
-	@echo "GitHub Actions upgrade complete"
-
-publish-gha:
-	@echo "Dispatching GitHub Actions publish workflow"
-	gh workflow run publish_to_pypi.yml --ref main
-
-# ── Release gates ─────────────────────────────────────────────────────────────
-
-publish-check:
-	@$(UV) build
-	@echo "Distribution built — inspect dist/ before publishing."
-	@ls -lh dist/
-
-publish:
-	@echo "Publishing via uv (set UV_PUBLISH_TOKEN or configure OIDC trusted publishing)"
-	@$(UV) publish
-
-check: format-check lint-check security test typecheck metadata-check version-check
-	@echo "All checks passed."
-
-check-ci: lint-check security test-ci typecheck metadata-check version-check
-	@echo "CI checks passed."
-
-prerelease: check dev-status docs-check smoke spell publish-check
-	@echo "Pre-release checks complete — ready to publish."
+legacy-test:
+	cd pygameui && uv run pytest -q

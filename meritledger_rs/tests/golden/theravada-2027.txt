@@ -1,0 +1,31 @@
+2027-01-07 uposatha  Uposatha (new moon)
+2027-01-22 uposatha  Uposatha (full moon)  ✦ feast
+2027-02-06 uposatha  Uposatha (new moon)
+2027-02-20 festival  Māgha Pūjā  ✦ feast
+2027-02-20 uposatha  Uposatha (full moon)
+2027-03-08 uposatha  Uposatha (new moon)  ✦ feast
+2027-03-22 uposatha  Uposatha (full moon)
+2027-04-06 uposatha  Uposatha (new moon)
+2027-04-20 uposatha  Uposatha (full moon)  ✦ feast
+2027-05-06 uposatha  Uposatha (new moon)
+2027-05-20 festival  Vesak  ✦ feast
+2027-05-20 uposatha  Uposatha (full moon)
+2027-06-04 uposatha  Uposatha (new moon)
+2027-06-18 uposatha  Uposatha (full moon)  ✦ feast
+2027-07-03 uposatha  Uposatha (new moon)
+2027-07-18 festival  Āsāḷha Pūjā  ✦ feast
+2027-07-18 uposatha  Uposatha (full moon)
+2027-07-19 festival  Vassa (rains retreat) begins
+2027-08-02 uposatha  Uposatha (new moon)
+2027-08-17 uposatha  Uposatha (full moon)  ✦ feast
+2027-08-31 uposatha  Uposatha (new moon)
+2027-09-15 uposatha  Uposatha (full moon)  ✦ feast
+2027-09-29 uposatha  Uposatha (new moon)
+2027-10-15 festival  Pavāraṇā: the rains retreat ends  ✦ feast
+2027-10-15 uposatha  Uposatha (full moon)
+2027-10-16 festival  Kaṭhina season begins
+2027-10-29 uposatha  Uposatha (new moon)
+2027-11-13 uposatha  Uposatha (full moon)  ✦ feast
+2027-11-27 uposatha  Uposatha (new moon)
+2027-12-13 uposatha  Uposatha (full moon)  ✦ feast
+2027-12-27 uposatha  Uposatha (new moon)

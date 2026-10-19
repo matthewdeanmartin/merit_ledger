@@ -1,0 +1,22 @@
+---
+id: silent-prayers
+title: Silent prayers
+tradition: nichiren
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: MIT, with the Merit Ledger repository (our own wording)
+source: Our own, in the shape of the silent prayers that close Nichiren-style gongyo
+---
+
+# Silent prayers
+
+After chanting, in your own words and without hurry:
+
+1. **Gratitude** for the Dharma, for the Lotus Sutra, and for those who carried it to you.
+2. **Your own practice:** what you will change in yourself, starting today.
+3. **Others:** the people in your life, by name; that they find their own way to awaken.
+4. **Peace:** that the teaching spreads, and the world grows kinder because of it.
+5. **Those who have died:** remember them, and carry their good forward.
+
+Close with Nam-myoho-renge-kyo, three times.

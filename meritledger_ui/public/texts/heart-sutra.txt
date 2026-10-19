@@ -1,0 +1,49 @@
+---
+id: heart-sutra
+title: The Heart Sutra
+tradition: mahayana
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: Chinese: CBETA (Taipei), CC BY-NC-SA 4.0; English: ours (MIT)
+source: 般若波羅蜜多心經 (tr. Xuanzang), T251, CBETA T08n0251_p0848c06–c22
+note: The Taishō has 揭帝 and 般羅 where many chanting books print 揭諦 and 波羅; the mantra is the same.
+---
+
+# The Heart Sutra
+
+When Avalokiteśvara, the bodhisattva of compassion, was practising the deep perfection of wisdom, they saw clearly that all five aggregates are empty, and went beyond all suffering.
+
+Śāriputra, form is not other than emptiness; emptiness is not other than form. Form is emptiness; emptiness is form. So too with feeling, perception, formations and consciousness.
+
+Śāriputra, all things are marked by emptiness: they do not arise and do not cease; they are not defiled and not pure; they do not increase and do not decrease.
+
+So in emptiness there is no form, and no feeling, perception, formations or consciousness; no eye, ear, nose, tongue, body or mind; no sight, sound, smell, taste, touch or object of mind; no realm of the eye, and so on to no realm of the mind's consciousness.
+
+There is no ignorance and no end of ignorance, and so on to no old age and death and no end of old age and death. There is no suffering, no cause, no ending and no path; no wisdom and no attaining.
+
+With nothing to attain, the bodhisattva relies on the perfection of wisdom, and the mind is free of hindrance. Without hindrance there is no fear. Far from upside-down dreams and thinking, they come at last to nirvana.
+
+All the buddhas of past, present and future rely on the perfection of wisdom and attain unsurpassed, complete awakening.
+
+So know that the perfection of wisdom is the great mantra, the mantra of great clarity, the unsurpassed mantra, the mantra without equal. It removes all suffering. It is true, not false. So the mantra of the perfection of wisdom is spoken, and it says:
+
+**Gate gate pāragate pārasaṃgate bodhi svāhā.**
+
+## The Chinese
+
+觀自在菩薩行深般若波羅蜜多時，照見五蘊皆空，度一切苦厄。
+
+舍利子！色不異空，空不異色，色即是空，空即是色；受、想、行、識，亦復如是。
+
+舍利子！是諸法空相，不生不滅，不垢不淨，不增不減。
+
+是故，空中無色，無受、想、行、識；無眼、耳、鼻、舌、身、意；無色、聲、香、味、觸、法；無眼界，乃至無意識界；無無明亦無無明盡，乃至無老死亦無老死盡；無苦、集、滅、道；無智，亦無得。
+
+以無所得故，菩提薩埵依般若波羅蜜多故，心無罣礙；無罣礙故，無有恐怖，遠離顛倒夢想，究竟涅槃。
+
+三世諸佛依般若波羅蜜多故，得阿耨多羅三藐三菩提。
+
+故知般若波羅蜜多是大神咒、是大明咒、是無上咒、是無等等咒，能除一切苦，真實不虛，故說般若波羅蜜多咒。即說咒曰：
+
+揭帝揭帝　般羅揭帝　般羅僧揭帝　菩提莎婆訶

@@ -1,0 +1,408 @@
+{
+  "board": {
+    "build": "9ee1a2e+",
+    "chip": "ESP32-S3",
+    "reset_reason": "USB"
+  },
+  "secs": 300,
+  "http": {
+    "ok": 1676,
+    "failed": 0,
+    "max_ms": 2429,
+    "errors": {}
+  },
+  "https": {
+    "ok": 186,
+    "failed": 0,
+    "max_ms": 5480,
+    "errors": {}
+  },
+  "h2": {
+    "ok": 107,
+    "failed": 0,
+    "max_ms": 6305,
+    "errors": {}
+  },
+  "outbound": [
+    {
+      "name": "household-ca",
+      "url": "https://gamematcher.local/api/v1/status",
+      "ok": 85,
+      "failed": 0,
+      "last_ms": 1562,
+      "max_ms": 2884,
+      "last_error": "",
+      "last_status": 200,
+      "last_bytes": 267
+    },
+    {
+      "name": "public-ca",
+      "url": "https://mastodon.social/.well-known/oauth-authorization-server",
+      "ok": 85,
+      "failed": 0,
+      "last_ms": 738,
+      "max_ms": 1527,
+      "last_error": "",
+      "last_status": 200,
+      "last_bytes": 1602
+    },
+    {
+      "name": "sd-append",
+      "url": "sd:ml/gate/append.log",
+      "ok": 85,
+      "failed": 0,
+      "last_ms": 66,
+      "max_ms": 92,
+      "last_error": "",
+      "last_status": 200,
+      "last_bytes": 4096
+    }
+  ],
+  "sd": {
+    "info": {
+      "sd_present": true,
+      "sd_total_bytes": 31251120128,
+      "sd_free_bytes": 31251087360,
+      "generation": 2,
+      "snapshot_bytes": 238,
+      "commits": 2,
+      "people": 1,
+      "max_people": 16,
+      "sessions": 1,
+      "max_sessions": 64,
+      "loaded_slot": 1,
+      "fallback_used": false
+    },
+    "before": {
+      "bytes": 1048576,
+      "write_ms": 1510,
+      "read_ms": 210
+    },
+    "after": {
+      "bytes": 1048576,
+      "write_ms": 2026,
+      "read_ms": 213
+    }
+  },
+  "heap_min_ever": 29435,
+  "psram_min_ever": 7926724,
+  "smallest_largest_block": 31744,
+  "server_tls_failures": 0,
+  "rebooted": false,
+  "alloc_failure_lines": [],
+  "samples": [
+    {
+      "t": 25,
+      "free": 56919,
+      "largest": 31744,
+      "min": 30447,
+      "psram_free": 8076784,
+      "tls_handshakes": 7,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 38,
+      "free": 57823,
+      "largest": 31744,
+      "min": 30447,
+      "psram_free": 8047352,
+      "tls_handshakes": 12,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 51,
+      "free": 59231,
+      "largest": 31744,
+      "min": 30335,
+      "psram_free": 8076104,
+      "tls_handshakes": 19,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 64,
+      "free": 57819,
+      "largest": 31744,
+      "min": 30335,
+      "psram_free": 8045732,
+      "tls_handshakes": 24,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 74,
+      "free": 62319,
+      "largest": 31744,
+      "min": 30335,
+      "psram_free": 8107336,
+      "tls_handshakes": 30,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 86,
+      "free": 60351,
+      "largest": 31744,
+      "min": 30335,
+      "psram_free": 8061160,
+      "tls_handshakes": 35,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 97,
+      "free": 56799,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8075116,
+      "tls_handshakes": 41,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 109,
+      "free": 66419,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8103168,
+      "tls_handshakes": 46,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 119,
+      "free": 69355,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8131372,
+      "tls_handshakes": 51,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 129,
+      "free": 59343,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8078684,
+      "tls_handshakes": 57,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 140,
+      "free": 56731,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8074700,
+      "tls_handshakes": 61,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 150,
+      "free": 53759,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8051132,
+      "tls_handshakes": 66,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 160,
+      "free": 60887,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8076276,
+      "tls_handshakes": 71,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 170,
+      "free": 60883,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8074640,
+      "tls_handshakes": 76,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 180,
+      "free": 56799,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8078280,
+      "tls_handshakes": 81,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 193,
+      "free": 60791,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8069716,
+      "tls_handshakes": 86,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 203,
+      "free": 56751,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8074936,
+      "tls_handshakes": 92,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 215,
+      "free": 60915,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8075640,
+      "tls_handshakes": 97,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 228,
+      "free": 62319,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8107140,
+      "tls_handshakes": 104,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 241,
+      "free": 60791,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8072916,
+      "tls_handshakes": 110,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 251,
+      "free": 56763,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8079576,
+      "tls_handshakes": 116,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 264,
+      "free": 66307,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8102872,
+      "tls_handshakes": 121,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 277,
+      "free": 56787,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8079600,
+      "tls_handshakes": 127,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 289,
+      "free": 66195,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8101200,
+      "tls_handshakes": 132,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 4,
+      "rejected": 0
+    },
+    {
+      "t": 302,
+      "free": 53791,
+      "largest": 31744,
+      "min": 29647,
+      "psram_free": 8048088,
+      "tls_handshakes": 138,
+      "tls_failures": 0,
+      "tls_open": 1,
+      "http_open": 3,
+      "rejected": 0
+    },
+    {
+      "t": 315,
+      "free": 63347,
+      "largest": 31744,
+      "min": 29435,
+      "psram_free": 8073412,
+      "tls_handshakes": 143,
+      "tls_failures": 0,
+      "tls_open": 0,
+      "http_open": 3,
+      "rejected": 0
+    }
+  ],
+  "passed": true
+}

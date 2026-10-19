@@ -1,0 +1,87 @@
+---
+id: lotus-2
+title: Lotus Sutra, chapter 2: Expedient Means (recited portion)
+tradition: nichiren
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: Chinese: CBETA (Taipei), CC BY-NC-SA 4.0; romanization and English: ours (MIT)
+source: Lotus Sutra 妙法蓮華經 (tr. Kumārajīva), T262, ch. 2 方便品, CBETA T09n0262_p0005b25–c13
+note: The ten factors (如是相 … 如是本末究竟等) are recited three times, as in Nichiren practice; the second and third times begin at 如是相.
+---
+
+# Myoho-renge-kyo Hoben-pon Dai Ni
+
+Niji seson. Ju sanmai. Anjo ni ki. Go shari-hotsu.
+
+Sho butchi e. Jinjin muryo. Go chie mon. Nange nannyu.
+
+Issai shomon. Hyaku-shi-butsu. Sho fu no chi. Shoi sha ga.
+
+Butsu zo shingon. Hyaku sen man noku. Mushu shi butsu. Jin gyo shi butsu.
+
+Muryo doho. Yumyo shojin. Myosho fumon. Joju jinjin.
+
+Mi-zo-u ho. Zuigi sho setsu. Ishu nange. Shari-hotsu.
+
+Go ju jobutsu irai. Shuju innen. Shuju hiyu. Ko en gonkyo.
+
+Mushu hoben. Indo shujo. Ryo ri sho jaku. Shoi sha ga.
+
+Nyorai hoben. Chiken haramitsu. Kai i gusoku. Shari-hotsu.
+
+Nyorai chiken. Kodai jinnon. Muryo muge. Riki.
+
+Mushoi. Zenjo. Gedas sanmai. Jinnyu musai.
+
+Joju issai. Mi-zo-u ho. Shari-hotsu. Nyorai no shuju funbetsu.
+
+Gyo sessho ho. Gonji nyunan. Ekka shushin. Shari-hotsu.
+
+Shu yo gon shi. Muryo muhen. Mi-zo-u ho. Busshitsu joju.
+
+Shi shari-hotsu. Fu shu bu setsu. Shoi sha ga. Bussho joju.
+
+Daiichi keu. Nange shi ho. Yui butsu yo butsu. Nai no kujin.
+
+Shoho jisso.
+
+Shoi shoho. Nyoze so. Nyoze sho. Nyoze tai. Nyoze riki. Nyoze sa. Nyoze in. Nyoze en. Nyoze ka. Nyoze ho. Nyoze honmak kukyo to.
+
+Nyoze so. Nyoze sho. Nyoze tai. Nyoze riki. Nyoze sa. Nyoze in. Nyoze en. Nyoze ka. Nyoze ho. Nyoze honmak kukyo to.
+
+Nyoze so. Nyoze sho. Nyoze tai. Nyoze riki. Nyoze sa. Nyoze in. Nyoze en. Nyoze ka. Nyoze ho. Nyoze honmak kukyo to.
+
+## The Chinese
+
+爾時世尊。從三昧。安詳而起。告舍利弗。諸佛智慧。甚深無量。
+
+其智慧門。難解難入。一切聲聞。辟支佛。所不能知。所以者何。
+
+佛曾親近。百千萬億。無數諸佛。盡行諸佛。無量道法。勇猛精進。
+
+名稱普聞。成就甚深。未曾有法。隨宜所說。意趣難解。舍利弗。
+
+吾從成佛已來。種種因緣。種種譬喻。廣演言教。無數方便。引導眾生。
+
+令離諸著。所以者何。如來方便。知見波羅蜜。皆已具足。舍利弗。
+
+如來知見。廣大深遠。無量無礙。力。無所畏。禪定。
+
+解脫三昧。深入無際。成就一切。未曾有法。舍利弗。如來能種種分別。
+
+巧說諸法。言辭柔軟。悅可眾心。舍利弗。取要言之。無量無邊。
+
+未曾有法。佛悉成就。止舍利弗。不須復說。所以者何。佛所成就。
+
+第一希有。難解之法。唯佛與佛。乃能究盡。諸法實相。所謂諸法。
+
+如是相。如是性。如是體。如是力。如是作。如是因。
+
+如是緣。如是果。如是報。如是本末究竟等。
+
+## What it says
+
+The Buddha rises from meditation and tells Śāriputra that the wisdom of the buddhas is deep and hard to enter. Since awakening, the Buddha has taught in countless ways, with stories and skilful means, to free people from what they cling to.
+
+Then the Buddha stops: there is no need to say more. Only a buddha together with a buddha can fully see the true aspect of all things: their form, nature and substance; their power and function; their causes and conditions; their effects and results; and how all of these are one, from first to last.

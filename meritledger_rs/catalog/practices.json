@@ -1,0 +1,25 @@
+{
+  "kinds": [
+    { "key": "meditation", "name": "Meditation", "icon": "🧘", "polarity": "merit", "category": "meditation", "unit": "minutes", "default_amount": 20, "visibility": "public", "content": true },
+    { "key": "walking", "name": "Walking meditation", "icon": "🚶", "polarity": "merit", "category": "meditation", "unit": "minutes", "default_amount": 10, "visibility": "public", "content": true },
+    { "key": "chanting", "name": "Chanting", "icon": "🎶", "polarity": "merit", "category": "chanting", "unit": "minutes", "default_amount": 15, "visibility": "public", "content": true },
+    { "key": "daimoku", "name": "Daimoku", "icon": "📿", "polarity": "merit", "category": "chanting", "unit": "count", "default_amount": 108, "visibility": "public", "content": true },
+    { "key": "prostrations", "name": "Prostrations", "icon": "🙇", "polarity": "merit", "category": "prostration", "unit": "count", "default_amount": 108, "visibility": "public", "content": true },
+    { "key": "recite", "name": "Recited a text", "icon": "📜", "polarity": "merit", "category": "recitation", "unit": "once", "default_amount": 0, "visibility": "public", "content": true },
+    { "key": "reading", "name": "Reading Dharma", "icon": "📖", "polarity": "merit", "category": "reading", "unit": "minutes", "default_amount": 30, "visibility": "public", "content": true },
+    { "key": "fiction", "name": "Reading fiction mindfully", "icon": "📚", "polarity": "merit", "category": "reading", "unit": "minutes", "default_amount": 30, "visibility": "public", "content": true },
+    { "key": "copying", "name": "Sutra copying", "icon": "🖋️", "polarity": "merit", "category": "copying", "unit": "minutes", "default_amount": 20, "visibility": "public", "content": true },
+    { "key": "art", "name": "Dharma art", "icon": "🎨", "polarity": "merit", "category": "art", "unit": "minutes", "default_amount": 30, "visibility": "public", "content": true },
+    { "key": "precepts", "name": "Kept the precepts today", "icon": "🪷", "polarity": "merit", "category": "precepts", "unit": "once", "default_amount": 0, "visibility": "public", "content": true },
+    { "key": "vegetarian", "name": "Vegetarian today", "icon": "🥦", "polarity": "merit", "category": "precepts", "unit": "once", "default_amount": 0, "visibility": "public", "content": true },
+    { "key": "service", "name": "Act of service", "icon": "🤲", "polarity": "merit", "category": "service", "unit": "once", "default_amount": 0, "visibility": "public", "content": true },
+    { "key": "dedication", "name": "Dedicated merit", "icon": "🕯️", "polarity": "merit", "category": "dedication", "unit": "once", "default_amount": 0, "visibility": "public", "content": false },
+    { "key": "rejoicing", "name": "Rejoiced in another's good", "icon": "😊", "polarity": "merit", "category": "rejoicing", "unit": "once", "default_amount": 0, "visibility": "public", "content": false },
+    { "key": "repentance", "name": "Repentance practice", "icon": "🌧️", "polarity": "merit", "category": "repentance", "unit": "once", "default_amount": 0, "visibility": "generic", "content": false },
+    { "key": "broke_precept", "name": "Broke a precept", "icon": "⚠️", "polarity": "demerit", "category": "precepts", "unit": "once", "default_amount": 0, "visibility": "private", "content": false },
+    { "key": "harsh_speech", "name": "Harsh speech", "icon": "🗯️", "polarity": "demerit", "category": "speech", "unit": "once", "default_amount": 0, "visibility": "private", "content": false },
+    { "key": "anger", "name": "Lost my temper", "icon": "🔥", "polarity": "demerit", "category": "mind", "unit": "once", "default_amount": 0, "visibility": "private", "content": false },
+    { "key": "intoxicants", "name": "Intoxicants", "icon": "🍷", "polarity": "demerit", "category": "precepts", "unit": "once", "default_amount": 0, "visibility": "private", "content": false },
+    { "key": "idle_harm", "name": "Careless harm", "icon": "🥀", "polarity": "demerit", "category": "action", "unit": "once", "default_amount": 0, "visibility": "private", "content": false }
+  ]
+}

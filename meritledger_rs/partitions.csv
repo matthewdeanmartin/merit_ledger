@@ -1,0 +1,11 @@
+# Merit Ledger on the Waveshare ESP32-S3-Touch-LCD-1.47 (16 MiB flash).
+# mlstate holds the snapshot slots (NVS: wear levelling, power-loss-safe
+# replacement). Long history and backups go to the SD card, not flash.
+# The ~8.4 MiB after mlstate is kept for OTA (an ota_0/ota_1 pair later).
+# Proposed in Sprint 0; Sprint 1 confirms it on the board.
+# Name, Type, SubType, Offset, Size
+nvs,      data, nvs,      0x9000,   0x6000,
+phy_init, data, phy,      0xf000,   0x1000,
+factory,  app,  factory,  0x10000,  0x600000,
+coredump, data, coredump, 0x610000, 0x10000,
+mlstate,  data, nvs,      0x620000, 0x100000,

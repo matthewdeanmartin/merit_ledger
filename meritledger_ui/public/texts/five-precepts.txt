@@ -1,0 +1,24 @@
+---
+id: five-precepts
+title: The Five Precepts
+tradition: mahayana
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: MIT, with the Merit Ledger repository (our own wording)
+source: catalog/precepts.json (T1476; see docs/precepts/five.md)
+---
+
+# The Five Precepts
+
+1. **No killing** (不殺生). Do not kill.
+
+2. **No stealing** (不偷盜). Do not take what is not given.
+
+3. **No sexual misconduct** (不邪婬). Do not engage in sexual misconduct.
+
+4. **No lying** (不妄語). Do not lie, not even in jest.
+
+5. **No alcohol** (不飲酒). Do not drink alcohol, not even a drop.
+
+The sources and notes are on the board's Precepts page.

@@ -1,124 +1,71 @@
 # Merit Ledger
 
-A private-first Buddhist practice journal for recording merit, vows, repentance,
-dedication, and rejoicing. It supports Zen, Chinese Mahayana, Nichiren, Pure Land, and
-secular ethical-practice modes.
+A household Buddhist practice ledger that lives on a small touchscreen board in the house.
 
-Merit Ledger is a small, calm desktop app. Everything stays **on your own machine** — no
-account, no cloud, no telemetry, no feed, no leaderboard. It is a practice tool, not a judge.
+You tap a practice on your phone and it's recorded for the day, Strava-style. Merit Ledger also
+covers:
 
-> "A quiet place to record wholesome practice."
+- sitting with bells on your phone
+- following the household's lunar calendar with its uposatha and feast days
+- printing a practice, or following along with it on a phone
+- keeping vows as a blog
+- tracking what you're reading via Open Library
+- inviting people by Mastodon DM or email
+
+It's built for one household's Chinese-descended, vegetarian, naturalistic practice first, with
+features for other people second.
+
+> **v2 is in progress.** It's a rewrite that runs on an ESP32-S3. v1, the Python desktop app, is
+> archived in [`pygameui/`](pygameui/README.md) and still runs.
+
+## Layout
+
+```
+meritledger_rs/   Rust: API, storage, firmware (on miniframework)
+meritledger_ui/   Angular UI, served from the board
+spec/             v2 decisions, domain sketch, roadmap, measurements
+sprints/          one self-contained file per sprint, so work can be handed off
+tools/            firmware build (and, from Sprint 1, deploy) scripts
+pygameui/         v1, archived: Python + FastAPI + SQLite + Pygame
+```
+
+Start with [spec/v2_decisions.md](spec/v2_decisions.md) and [spec/roadmap.md](spec/roadmap.md).
+About the calendar dates (and what they don't try to be): [docs/CALENDARS.md](docs/CALENDARS.md).
+The precept sets, with their sources: [docs/precepts/](docs/precepts/README.md).
 
 ## Requirements
 
-- Python **3.10+**
-- [`uv`](https://docs.astral.sh/uv/) (recommended) — handles the virtualenv and dependencies for you
+- The sibling repo **`C:\github\microcontroller`** (miniframework), checked out next to this one.
+  The Rust crate and the UI both use it by relative path.
+- Rust (stable) for desktop. For firmware, the `esp` toolchain (`espup`) and ESP-IDF 5.5.3 at
+  `C:\Espressif`.
+- Node 24 and npm.
+- Git Bash and `make`.
 
-## Quick start (from a checkout)
+## Quick start (desktop)
 
-```bash
-uv sync          # install dependencies into a local .venv
-make run         # start the backend + open the app window
+```sh
+cd meritledger_ui && npm install && cd ..
+make test          # Rust tests + UI type check + vitest
+make run-bundle    # build the UI, serve UI + API on http://127.0.0.1:8089
 ```
 
-That's it. `make run` launches the local FastAPI backend, waits for it to report healthy,
-then opens the Pygame window. On first launch you'll be walked through onboarding
-(choose a tradition, a point style, and a name); after that it goes straight to your dashboard.
+For UI work, run `make run` in one shell and `make web-dev` in another. The second serves
+http://localhost:4200 with hot reload, and proxies `/api` to :8089.
 
-No `make`? Run the console script directly:
+`make check` is the full gate: tests, fmt, clippy `-D warnings`, and a production UI build.
 
-```bash
-uv run merit_ledger
+## On the board
+
+The board is a Waveshare ESP32-S3-Touch-LCD-1.47. Read [DEPLOY.md](DEPLOY.md) first.
+
+```sh
+make certs         # once: meritledger.local from the household CA
+make firmware      # build only; never touches a board
+make board-check PORT=COM5   # read-only identity check
+make update PORT=COM5        # app-only update; keeps everyone's data
 ```
-
-Or, once installed as a package (see below):
-
-```bash
-merit_ledger
-```
-
-## Handy commands
-
-| Command | What it does |
-| --- | --- |
-| `make run` | Launch the desktop app (backend + window). **Start here.** |
-| `make backend` | Start the backend only, wait for `/health`, then exit (smoke check). |
-| `make backend-dev` | Run the API with autoreload at `http://127.0.0.1:8765` (Ctrl-C to stop). |
-| `make where-data` | Print where your ledger is stored on disk. |
-| `make print-url` | Print the local backend URL. |
-| `make help` | List every available target. |
-
-### Exploring the API
-
-The backend is a normal FastAPI app. With `make backend-dev` running, open
-`http://127.0.0.1:8765/docs` for interactive Swagger docs, or hit `GET /health` to confirm
-it's up. The frontend talks to this same local API over HTTP — nothing leaves your machine.
-
-## Where your data lives
-
-Your ledger is a single local SQLite file, created on first run. Run `make where-data` to
-see the exact path. By platform:
-
-| OS | Location |
-| --- | --- |
-| Windows | `%LOCALAPPDATA%\MeritLedger\merit_ledger.sqlite3` |
-| macOS | `~/Library/Application Support/MeritLedger/merit_ledger.sqlite3` |
-| Linux | `~/.local/share/MeritLedger/merit_ledger.sqlite3` |
-
-You can export everything to JSON or Markdown (and re-import JSON) from **Settings → Data**.
-Settings also offers two resets: **Clear user data** (wipes the practice ledger but keeps
-your profile and settings — handy for testing) and **Clear ALL data** (a full factory reset
-that re-runs onboarding).
-
-> ⚠️ Exported files may contain private reflections. Review before sharing.
-
-## Installation (as a package)
-
-Not published to PyPI yet. From a checkout you can build and install the wheel:
-
-```bash
-uv build
-pipx install dist/merit_ledger-*.whl   # or: pip install dist/merit_ledger-*.whl
-merit_ledger
-```
-
-## How it's built
-
-- **Frontend:** Pygame (`pygame-ce`) — scene-based UI, one calm theme per tradition.
-- **Backend:** a local FastAPI server the app starts on `127.0.0.1:8765`.
-- **Storage:** SQLite modeled as a DynamoDB-style single table, so the domain logic is
-  storage-agnostic and cloud migration stays open later.
-- **Architecture:** business logic lives in the backend (domain + services); the frontend
-  is a thin view layer that only calls the HTTP API.
-
-See [`spec/spec.md`](spec/spec.md) for the full product spec and [`sprints/`](sprints/) for
-the incremental build plan.
-
-## Development
-
-```bash
-make check      # full local quality gate (format, lint, security, tests, types)
-make test       # pytest with coverage
-make typecheck  # mypy strict
-```
-
-Tests run headless; the Pygame-touching tests set `SDL_VIDEODRIVER=dummy` automatically.
-
-## Contributing
-
-See [CONTRIBUTING.md](docs/extending/CONTRIBUTING.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md).
-
-
-## HTTPX2 migration verification (2026-10-04)
-
-Direct API client and server health probes use HTTPX2. All 127 tests pass on RC3 pre and 3.14. Stable RC3 remains Pydantic-core-wheel-blocked.
-
-Dependency locks upgraded and checked. Published dependency wheels only; no native builds or GitHub jobs. Application HTTPX2 objects remain separate from third-party HTTPX objects. Current HTTPX2 releases use the OS trust store. Experimental RC3 tests may require Pydantic prerelease wheels; stable support is reported separately. Changes local; human operators decide releases and upstream reports.
+MIT. See [LICENSE](LICENSE).

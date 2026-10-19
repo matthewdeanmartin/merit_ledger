@@ -1,0 +1,123 @@
+---
+id: lotus-16-verses
+title: Lotus Sutra, chapter 16: the verses (Jigage)
+tradition: nichiren
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: Chinese: CBETA (Taipei), CC BY-NC-SA 4.0; romanization and English: ours (MIT)
+source: Lotus Sutra 妙法蓮華經 (tr. Kumārajīva), T262, ch. 16 如來壽量品, verse section, CBETA T09n0262_p0043b12–p0044a04
+note: Read naturalistically, the Buddha who is always here is the awakening the teaching makes possible in every life, not a person who never dies.
+---
+
+# Ji ga toku butsu rai
+
+Ji ga toku butsu rai. Sho kyo sho kosshu. Muryo hyaku sen man. Oku sai asogi.
+
+Jo seppo kyoke. Mushu oku shujo. Ryo nyu o butsudo. Nirai muryo ko.
+
+I do shujo ko. Hoben gen nehan. Ni jitsu fu metsudo. Jo ju shi seppo.
+
+Ga jo ju o shi. I sho jinzu riki. Ryo tendo shujo. Sui gon ni fu ken.
+
+Shu ken ga metsudo. Ko kuyo shari. Gen kai e renbo. Ni sho katsugo shin.
+
+Shujo ki shinbuku. Shichijiki i nyunan. Isshin yoku ken butsu. Fu ji shaku shinmyo.
+
+Ji ga gyu shuso. Ku shutsu ryoju sen. Ga ji go shujo. Jo zai shi fu metsu.
+
+I hoben rikko. Gen u metsu fu metsu. Yo koku u shujo. Kugyo shingyo sha.
+
+Ga bu o hi chu. I setsu mujo ho. Nyoto fu mon shi. Tan ni ga metsudo.
+
+Ga ken sho shujo. Motsu zai o kuno. Ko fu i gen shin. Ryo go sho katsugo.
+
+In go shin renbo. Nai shutsu i seppo. Jinzu riki nyoze. O asogi ko.
+
+Jo zai ryoju sen. Gyu yo sho jusho. Shujo ken ko jin. Dai ka sho sho ji.
+
+Ga shi do annon. Ten nin jo juman. Onrin sho dokaku. Shuju ho shogon.
+
+Hoju ta ke ka. Shujo sho yuraku. Sho ten gyaku ten ku. Jo sa shu gigaku.
+
+U mandara ke. San butsu gyu daishu. Ga jodo fu ki. Ni shu ken sho jin.
+
+Ufu sho kuno. Nyoze shitsu juman. Ze sho zai shujo. I akugo innen.
+
+Ka asogi ko. Fu mon sanbo myo. Sho u shu kudoku. Nyuwa shichijiki sha.
+
+Sokkai ken ga shin. Zai shi ni seppo. Waku ji i shi shu. Setsu butsu ju muryo.
+
+Ku nai ken bussha. I setsu butsu nanchi. Ga chiriki nyoze. Eko sho muryo.
+
+Jumyo mushu ko. Ku shu go sho toku. Nyoto u chi sha. Motto shi sho gi.
+
+To dan ryo yo jin. Butsugo jippu ko. Nyo i zen hoben. I ji oshi ko.
+
+Jitsu zai ni gon shi. Mu no sekko mo. Ga yaku i se fu. Ku sho ku gen sha.
+
+I bonbu tendo. Jitsu zai ni gon metsu. I jo ken ga ko. Ni sho kyoshi shin.
+
+Hoitsu jaku go yoku. Da o akudo chu. Ga jo chi shujo. Gyodo fu gyodo.
+
+Zui sho o ka do. I sesshuju ho. Mai ji sa ze i. I ga ryo shujo.
+
+Toku nyu mujo e. Soku joju busshin.
+
+## The Chinese
+
+自我得佛來。所經諸劫數。無量百千萬。億載阿僧祇。
+
+常說法教化。無數億眾生。令入於佛道。爾來無量劫。
+
+為度眾生故。方便現涅槃。而實不滅度。常住此說法。
+
+我常住於此。以諸神通力。令顛倒眾生。雖近而不見。
+
+眾見我滅度。廣供養舍利。咸皆懷戀慕。而生渴仰心。
+
+眾生既信伏。質直意柔軟。一心欲見佛。不自惜身命。
+
+時我及眾僧。俱出靈鷲山。我時語眾生。常在此不滅。
+
+以方便力故。現有滅不滅。餘國有眾生。恭敬信樂者。
+
+我復於彼中。為說無上法。汝等不聞此。但謂我滅度。
+
+我見諸眾生。沒在於苦惱。故不為現身。令其生渴仰。
+
+因其心戀慕。乃出為說法。神通力如是。於阿僧祇劫。
+
+常在靈鷲山。及餘諸住處。眾生見劫盡。大火所燒時。
+
+我此土安隱。天人常充滿。園林諸堂閣。種種寶莊嚴。
+
+寶樹多花菓。眾生所遊樂。諸天擊天鼓。常作眾伎樂。
+
+雨曼陀羅花。散佛及大眾。我淨土不毀。而眾見燒盡。
+
+憂怖諸苦惱。如是悉充滿。是諸罪眾生。以惡業因緣。
+
+過阿僧祇劫。不聞三寶名。諸有修功德。柔和質直者。
+
+則皆見我身。在此而說法。或時為此眾。說佛壽無量。
+
+久乃見佛者。為說佛難值。我智力如是。慧光照無量。
+
+壽命無數劫。久修業所得。汝等有智者。勿於此生疑。
+
+當斷令永盡。佛語實不虛。如醫善方便。為治狂子故。
+
+實在而言死。無能說虛妄。我亦為世父。救諸苦患者。
+
+為凡夫顛倒。實在而言滅。以常見我故。而生憍恣心。
+
+放逸著五欲。墮於惡道中。我常知眾生。行道不行道。
+
+隨所應可度。為說種種法。每自作是意。以何令眾生。
+
+得入無上慧。速成就佛身。
+
+## What it says
+
+The Buddha says: my awakening is not recent. Through countless ages I have been teaching, and I only appear to pass away, so that people will not take the teaching for granted but seek it for themselves. Those who are honest and gentle see that the Buddha is always here, teaching. My constant thought is: how can I help every being enter the highest wisdom and quickly become a buddha?

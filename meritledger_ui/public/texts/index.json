@@ -1,0 +1,64 @@
+{
+ "texts": [
+  {
+   "id": "lotus-2",
+   "title": "Lotus Sutra, chapter 2: Expedient Means (recited portion)",
+   "tradition": "nichiren"
+  },
+  {
+   "id": "lotus-16-verses",
+   "title": "Lotus Sutra, chapter 16: the verses (Jigage)",
+   "tradition": "nichiren"
+  },
+  {
+   "id": "daimoku",
+   "title": "Nam-myoho-renge-kyo (daimoku)",
+   "tradition": "nichiren"
+  },
+  {
+   "id": "lotus-16-story",
+   "title": "Lotus Sutra, chapter 16: the physician's sons",
+   "tradition": "nichiren"
+  },
+  {
+   "id": "heart-sutra",
+   "title": "The Heart Sutra",
+   "tradition": "mahayana"
+  },
+  {
+   "id": "repentance-verse",
+   "title": "Verse of repentance",
+   "tradition": "mahayana"
+  },
+  {
+   "id": "three-refuges",
+   "title": "The Three Refuges",
+   "tradition": "mahayana"
+  },
+  {
+   "id": "five-precepts",
+   "title": "The Five Precepts",
+   "tradition": "mahayana"
+  },
+  {
+   "id": "dedication",
+   "title": "Dedication of merit",
+   "tradition": "mahayana"
+  },
+  {
+   "id": "metta",
+   "title": "Loving-kindness reflection",
+   "tradition": "mahayana"
+  },
+  {
+   "id": "evening-reflection",
+   "title": "Evening reflection",
+   "tradition": "mahayana"
+  },
+  {
+   "id": "silent-prayers",
+   "title": "Silent prayers",
+   "tradition": "nichiren"
+  }
+ ]
+}

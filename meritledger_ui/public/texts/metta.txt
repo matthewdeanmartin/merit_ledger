@@ -1,0 +1,24 @@
+---
+id: metta
+title: Loving-kindness reflection
+tradition: mahayana
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: MIT, with the Merit Ledger repository (our own wording)
+source: Our own, after the traditional pattern
+---
+
+# Loving-kindness
+
+Sit comfortably. Let the breath settle.
+
+May I be safe. May I be well. May I be at ease. May I be kind to myself.
+
+Bring to mind someone who has helped you. May you be safe. May you be well. May you be at ease.
+
+Bring to mind someone you hardly know: the cashier, a neighbour. May you be safe. May you be well. May you be at ease.
+
+Bring to mind someone you find difficult. As much as you honestly can: may you be safe. May you be well. May you be at ease.
+
+Let it widen to this house, this street, this city, every living thing. May all beings be safe, well and at ease.

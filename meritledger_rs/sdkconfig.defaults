@@ -1,0 +1,56 @@
+# Merit Ledger on the Waveshare ESP32-S3-Touch-LCD-1.47: two Xtensa cores at
+# 240 MHz, 16 MiB quad flash, 8 MiB octal PSRAM. Started from nanacoin_rs's S3
+# profile and housemetrics' PSRAM settings; Sprint 1 measures it on the board.
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+
+# Octal PSRAM (GPIO 33-37 are taken by it). Big buffers go there; internal
+# RAM stays for DMA, Wi-Fi and the stacks that write flash.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=16384
+CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=65536
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y
+CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM=y
+CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY=y
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=32768
+CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=16384
+# The connection loop waits in 1 ms steps; at 100 Hz each wait is 10 ms.
+CONFIG_FREERTOS_HZ=1000
+
+# TLS server with session tickets (a returning browser skips the ~1 s
+# handshake). Record buffers in PSRAM.
+CONFIG_ESP_TLS_SERVER=y
+CONFIG_ESP_TLS_SERVER_SESSION_TICKETS=y
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=n
+CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC=y
+CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN=16384
+CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN=4096
+# Public CAs for outbound HTTPS (mastodon.social, openlibrary.org, Brevo).
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN=y
+
+# Large-board connection limits plus outbound clients, DNS, SNTP and mDNS.
+CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_LWIP_MAX_ACTIVE_TCP=16
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_LOCAL_HOSTNAME="meritledger"
+
+# Native USB (USB-Serial/JTAG on the single Type-C port).
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
+# A crash saves task, PC and backtrace; the next boot reports it in /api/v1/log.
+CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
+CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF=y
+CONFIG_ESP_COREDUMP_CHECKSUM_CRC32=y
+
+# SD card (4-bit SDMMC, FAT). Long file names (`2026-10.log`, `ml/backup/`)
+# need LFN; the name buffer goes on the heap, not the caller's stack.
+CONFIG_FATFS_LFN_HEAP=y
+CONFIG_FATFS_MAX_LFN=64

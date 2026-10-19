@@ -1,0 +1,31 @@
+2028-01-11 uposatha  Uposatha (full moon)  ✦ feast
+2028-01-26 uposatha  Uposatha (new moon)
+2028-02-10 festival  Māgha Pūjā  ✦ feast
+2028-02-10 uposatha  Uposatha (full moon)
+2028-02-25 uposatha  Uposatha (new moon)
+2028-03-10 uposatha  Uposatha (full moon)  ✦ feast
+2028-03-26 uposatha  Uposatha (new moon)
+2028-04-09 uposatha  Uposatha (full moon)  ✦ feast
+2028-04-24 uposatha  Uposatha (new moon)
+2028-05-08 festival  Vesak  ✦ feast
+2028-05-08 uposatha  Uposatha (full moon)
+2028-05-24 uposatha  Uposatha (new moon)
+2028-06-07 uposatha  Uposatha (full moon)
+2028-06-22 uposatha  Uposatha (new moon)  ✦ feast
+2028-07-06 festival  Āsāḷha Pūjā  ✦ feast
+2028-07-06 uposatha  Uposatha (full moon)
+2028-07-07 festival  Vassa (rains retreat) begins
+2028-07-21 uposatha  Uposatha (new moon)
+2028-08-05 uposatha  Uposatha (full moon)
+2028-08-20 uposatha  Uposatha (new moon)  ✦ feast
+2028-09-03 uposatha  Uposatha (full moon)
+2028-09-18 uposatha  Uposatha (new moon)  ✦ feast
+2028-10-03 festival  Pavāraṇā: the rains retreat ends  ✦ feast
+2028-10-03 uposatha  Uposatha (full moon)
+2028-10-04 festival  Kaṭhina season begins
+2028-10-17 uposatha  Uposatha (new moon)
+2028-11-02 uposatha  Uposatha (full moon)
+2028-11-16 uposatha  Uposatha (new moon)  ✦ feast
+2028-12-01 uposatha  Uposatha (full moon)
+2028-12-15 uposatha  Uposatha (new moon)  ✦ feast
+2028-12-31 uposatha  Uposatha (full moon)

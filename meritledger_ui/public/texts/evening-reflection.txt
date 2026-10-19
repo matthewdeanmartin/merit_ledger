@@ -1,0 +1,21 @@
+---
+id: evening-reflection
+title: Evening reflection
+tradition: mahayana
+provenance: llm-draft
+reviewed_by: 
+reviewed_on: 
+license: MIT, with the Merit Ledger repository (our own wording)
+source: Our own
+---
+
+# Evening reflection
+
+Before sleep, look back over the day without judging it.
+
+- Where did I keep my precepts today, and where did I slip?
+- Whom did I help? Whom did I hurt, and can I make it right tomorrow?
+- What did I learn, and from whom?
+- What good did others do that I can rejoice in?
+
+Set down what can't be fixed tonight. Tomorrow is another chance to practise.

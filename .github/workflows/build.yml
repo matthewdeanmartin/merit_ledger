@@ -3,6 +3,10 @@ name: Build and Test
 on: [push, pull_request]
 permissions:
   contents: read
+# The v1 Python app is archived in pygameui/ (see pygameui/README.md).
+defaults:
+  run:
+    working-directory: pygameui
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# The v1 Python app is archived in pygameui/ (see pygameui/README.md).
+defaults:
+  run:
+    working-directory: pygameui
 jobs:
   tox:
     name: ${{ matrix.os }} / py${{ matrix.python-version }}

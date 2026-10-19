@@ -1,0 +1,31 @@
+2030-01-03 uposatha  Uposatha (new moon)
+2030-01-19 uposatha  Uposatha (full moon)  ✦ feast
+2030-02-02 uposatha  Uposatha (new moon)
+2030-02-18 festival  Māgha Pūjā  ✦ feast
+2030-02-18 uposatha  Uposatha (full moon)
+2030-03-04 uposatha  Uposatha (new moon)
+2030-03-19 uposatha  Uposatha (full moon)  ✦ feast
+2030-04-02 uposatha  Uposatha (new moon)
+2030-04-17 uposatha  Uposatha (full moon)  ✦ feast
+2030-05-02 uposatha  Uposatha (new moon)
+2030-05-17 festival  Vesak  ✦ feast
+2030-05-17 uposatha  Uposatha (full moon)
+2030-06-01 uposatha  Uposatha (new moon)
+2030-06-15 uposatha  Uposatha (full moon)  ✦ feast
+2030-06-30 uposatha  Uposatha (new moon)
+2030-07-14 festival  Āsāḷha Pūjā  ✦ feast
+2030-07-14 uposatha  Uposatha (full moon)
+2030-07-15 festival  Vassa (rains retreat) begins
+2030-07-30 uposatha  Uposatha (new moon)
+2030-08-13 uposatha  Uposatha (full moon)  ✦ feast
+2030-08-28 uposatha  Uposatha (new moon)
+2030-09-11 uposatha  Uposatha (full moon)  ✦ feast
+2030-09-27 uposatha  Uposatha (new moon)
+2030-10-11 festival  Pavāraṇā: the rains retreat ends  ✦ feast
+2030-10-11 uposatha  Uposatha (full moon)
+2030-10-12 festival  Kaṭhina season begins
+2030-10-26 uposatha  Uposatha (new moon)
+2030-11-09 uposatha  Uposatha (full moon)  ✦ feast
+2030-11-25 uposatha  Uposatha (new moon)
+2030-12-09 uposatha  Uposatha (full moon)  ✦ feast
+2030-12-24 uposatha  Uposatha (new moon)

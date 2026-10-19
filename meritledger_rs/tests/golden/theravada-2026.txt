@@ -1,0 +1,31 @@
+2026-01-03 uposatha  Uposatha (full moon)
+2026-01-18 uposatha  Uposatha (new moon)  ✦ feast
+2026-02-01 uposatha  Uposatha (full moon)
+2026-02-17 uposatha  Uposatha (new moon)  ✦ feast
+2026-03-03 festival  Māgha Pūjā  ✦ feast
+2026-03-03 uposatha  Uposatha (full moon)
+2026-03-18 uposatha  Uposatha (new moon)
+2026-04-01 uposatha  Uposatha (full moon)
+2026-04-17 uposatha  Uposatha (new moon)  ✦ feast
+2026-05-01 uposatha  Uposatha (full moon)
+2026-05-16 uposatha  Uposatha (new moon)
+2026-05-31 festival  Vesak  ✦ feast
+2026-05-31 uposatha  Uposatha (full moon)
+2026-06-14 uposatha  Uposatha (new moon)  ✦ feast
+2026-06-29 uposatha  Uposatha (full moon)
+2026-07-14 uposatha  Uposatha (new moon)
+2026-07-29 festival  Āsāḷha Pūjā  ✦ feast
+2026-07-29 uposatha  Uposatha (full moon)
+2026-07-30 festival  Vassa (rains retreat) begins
+2026-08-12 uposatha  Uposatha (new moon)  ✦ feast
+2026-08-28 uposatha  Uposatha (full moon)
+2026-09-10 uposatha  Uposatha (new moon)  ✦ feast
+2026-09-26 uposatha  Uposatha (full moon)
+2026-10-10 uposatha  Uposatha (new moon)
+2026-10-26 festival  Pavāraṇā: the rains retreat ends  ✦ feast
+2026-10-26 uposatha  Uposatha (full moon)
+2026-10-27 festival  Kaṭhina season begins
+2026-11-09 uposatha  Uposatha (new moon)  ✦ feast
+2026-11-24 uposatha  Uposatha (full moon)
+2026-12-08 uposatha  Uposatha (new moon)  ✦ feast
+2026-12-23 uposatha  Uposatha (full moon)
