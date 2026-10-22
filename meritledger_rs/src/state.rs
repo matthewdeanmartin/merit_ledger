@@ -5,9 +5,9 @@
 //! sign-in is "tap your name, enter your PIN": names are unique and public.
 //! Someone without a PIN can't sign in; others record for them.
 use crate::messages::{
-    AdminPersonUpdate, StoredDay, StoredEntry, StoredKind, StoredPerson, StoredPost,
-    StoredPracticeDoc, StoredPrecepts, StoredSession, StoredState, StoredText, StoredTimer,
-    StoredVow,
+    AdminPersonUpdate, StoredCall, StoredDay, StoredEntry, StoredEvent, StoredKind, StoredPerson,
+    StoredPost, StoredPracticeDoc, StoredPrecepts, StoredReading, StoredSession, StoredState,
+    StoredText, StoredTimer, StoredVow,
 };
 use crate::pin;
 use crate::stats::Tally;
@@ -22,6 +22,11 @@ pub const SCHEMA: u16 = 1;
 pub const ADMIN: &str = "admin";
 pub const MEMBER: &str = "member";
 pub const GUEST: &str = "guest";
+/// Guests at a time (owner, 2026-10-21), inside `Limits::people`, so
+/// visitors can never crowd out the household.
+pub const MAX_GUESTS: usize = 8;
+/// A guest unused this long is deleted, with everything they recorded.
+pub const GUEST_IDLE_SECS: u64 = 90 * 86_400;
 
 /// Bounds that differ between a board and a desktop.
 #[derive(Clone, Debug)]
@@ -49,6 +54,12 @@ pub struct Limits {
     pub practices: usize,
     /// Bytes of text bodies kept in the snapshot when there's no SD card.
     pub snapshot_text_bytes: usize,
+    /// Notifications kept per person (a ring), reminders per person, events.
+    pub notifications: usize,
+    pub reminders: usize,
+    pub events: usize,
+    /// Books on reading lists (everyone's together).
+    pub readings: usize,
 }
 
 impl Limits {
@@ -75,6 +86,12 @@ impl Limits {
             // ~40 bytes per element, up to 40 elements.
             practices: 128,
             snapshot_text_bytes: 16 * 1024,
+            // ~50 bytes each: 16 people x 30 is ~24 KB of snapshot.
+            notifications: 30,
+            reminders: 12,
+            events: 64,
+            // ~120 bytes each.
+            readings: 256,
         }
     }
 }
@@ -127,6 +144,21 @@ pub struct State {
     pub next_text: u32,
     pub practices: Vec<StoredPracticeDoc>,
     pub next_practice: u32,
+    /// Events, calls to service and notifications (`notify.rs`, `events.rs`).
+    pub events: Vec<StoredEvent>,
+    pub next_event: u32,
+    pub next_notification: u32,
+    pub calls: Vec<StoredCall>,
+    pub observance_day: String,
+    pub next_reminder: u32,
+    /// The board's screen.
+    pub screen: crate::messages::ScreenSettings,
+    /// Reading lists (`reading.rs`).
+    pub readings: Vec<StoredReading>,
+    pub next_reading: u32,
+    /// DMs and emails new notifications want sent: `api.rs` hands them to
+    /// the outbox after the change is saved (RAM only).
+    pub deliveries: Vec<crate::notify::Delivery>,
     pub limits: Limits,
 }
 
@@ -164,6 +196,10 @@ fn session_config(limits: &Limits) -> SessionConfig {
     SessionConfig {
         per_subject: limits.sessions_per_person,
         capacity: limits.sessions,
+        // A guest's session is their account (no PIN): it lasts as long as
+        // the account does, 90 days unused.
+        idle_secs: GUEST_IDLE_SECS,
+        absolute_secs: 400 * 86_400,
         ..SessionConfig::new("ml_session")
     }
 }
@@ -252,6 +288,19 @@ impl State {
             next_text: 1,
             practices: Vec::new(),
             next_practice: 1,
+            events: Vec::new(),
+            next_event: 1,
+            next_notification: 1,
+            calls: Vec::new(),
+            observance_day: String::new(),
+            next_reminder: 1,
+            screen: crate::messages::ScreenSettings {
+                brightness: 40,
+                ..Default::default()
+            },
+            readings: Vec::new(),
+            next_reading: 1,
+            deliveries: Vec::new(),
             limits,
         }
     }
@@ -318,6 +367,31 @@ impl State {
                 .next_practice
                 .max(stored.practices.iter().map(|p| p.id + 1).max().unwrap_or(1)),
             practices: stored.practices,
+            next_event: stored
+                .next_event
+                .max(stored.events.iter().map(|e| e.id + 1).max().unwrap_or(1)),
+            events: stored.events,
+            next_notification: stored.next_notification.max(1),
+            calls: stored.calls,
+            observance_day: stored.observance_day,
+            next_reminder: stored.next_reminder.max(1),
+            screen: crate::messages::ScreenSettings {
+                flip: stored.screen_flip,
+                native: stored.screen_native,
+                brightness: if stored.screen_brightness == 0 {
+                    40
+                } else {
+                    stored.screen_brightness
+                },
+                touch_flip_x: stored.touch_flip_x,
+                touch_flip_y: stored.touch_flip_y,
+                last_touch: String::new(),
+            },
+            next_reading: stored
+                .next_reading
+                .max(stored.readings.iter().map(|r| r.id + 1).max().unwrap_or(1)),
+            readings: stored.readings,
+            deliveries: Vec::new(),
             limits,
         }
     }
@@ -373,6 +447,19 @@ impl State {
             next_text: self.next_text,
             practices: self.practices.clone(),
             next_practice: self.next_practice,
+            events: self.events.clone(),
+            next_event: self.next_event,
+            next_notification: self.next_notification,
+            calls: self.calls.clone(),
+            observance_day: self.observance_day.clone(),
+            next_reminder: self.next_reminder,
+            screen_flip: self.screen.flip,
+            screen_native: self.screen.native,
+            screen_brightness: self.screen.brightness,
+            touch_flip_x: self.screen.touch_flip_x,
+            touch_flip_y: self.screen.touch_flip_y,
+            readings: self.readings.clone(),
+            next_reading: self.next_reading,
         }
     }
 
@@ -448,6 +535,7 @@ impl State {
             disabled: false,
             pinned: Vec::new(),
             calendar: String::new(),
+            ..Default::default()
         });
         self.next_person += 1;
         Ok(id)
@@ -485,7 +573,56 @@ impl State {
             ));
         }
         check_pin(pin)?;
-        self.add_person(name, GUEST, pin, "", now)
+        // Anyone may join with a PIN (owner, 2026-10-21); an admin removes
+        // accounts that should have been guests.
+        self.add_person(name, MEMBER, pin, "", now)
+    }
+
+    /// "I'm visiting": a guest with a name and no PIN. Idle guests are
+    /// cleared first; past `MAX_GUESTS` it's 409 `full`.
+    pub fn add_visitor(&mut self, name: &str, now: u64) -> Result<u32, ApiError> {
+        if self.people.is_empty() {
+            return Err(ApiError::new(
+                409,
+                "setup_needed",
+                "Set up Merit Ledger first: the first person becomes admin",
+            ));
+        }
+        if self.signup_closed {
+            return Err(ApiError::new(
+                403,
+                "signup_closed",
+                "The household isn't taking new visitors right now",
+            ));
+        }
+        self.purge_idle_guests(now);
+        if self.people.iter().filter(|p| p.role == GUEST).count() >= MAX_GUESTS {
+            return Err(ApiError::new(
+                409,
+                "full",
+                format!("The board has room for {MAX_GUESTS} guests at a time"),
+            ));
+        }
+        self.add_person(name, GUEST, "", "", now)
+    }
+
+    /// Deletes guests unused for `GUEST_IDLE_SECS`, with their data.
+    /// Returns whether anyone went.
+    pub fn purge_idle_guests(&mut self, now: u64) -> bool {
+        let idle: Vec<u32> = self
+            .people
+            .iter()
+            .filter(|p| p.role == GUEST)
+            .filter(|p| {
+                let seen = p.last_seen.max(p.created);
+                seen != 0 && now.saturating_sub(seen) > GUEST_IDLE_SECS
+            })
+            .map(|p| p.id)
+            .collect();
+        for id in &idle {
+            let _ = self.remove_person(0, *id, false);
+        }
+        !idle.is_empty()
     }
 
     /// The household's calendar system.
@@ -664,6 +801,7 @@ impl State {
             self.posts.retain(|p| p.person != id);
             self.precepts.retain(|p| p.person != id);
             self.practices.retain(|p| p.owner != id);
+            self.readings.retain(|r| r.person != id);
         }
         Ok(())
     }
@@ -689,15 +827,55 @@ mod tests {
     }
 
     #[test]
-    fn setup_once_then_signup_is_guest() {
+    fn setup_once_then_signup_is_a_member() {
         let mut s = State::new(limits());
         let dad = s.setup("Dad", "1234", 0).unwrap();
         assert_eq!(s.person(dad).unwrap().role, ADMIN);
         assert_eq!(s.setup("Again", "1234", 0).unwrap_err().status, 409);
-        let guest = s.signup("Visitor", "5678", 0).unwrap();
-        assert_eq!(s.person(guest).unwrap().role, GUEST);
+        let aunt = s.signup("Aunt May", "5678", 0).unwrap();
+        assert_eq!(s.person(aunt).unwrap().role, MEMBER);
         s.signup_closed = true;
         assert_eq!(s.signup("Late", "5678", 0).unwrap_err().status, 403);
+        assert_eq!(s.add_visitor("Late", NOW).unwrap_err().status, 403);
+    }
+
+    const NOW: u64 = 1_800_000_000;
+
+    #[test]
+    fn guests_need_a_name_not_a_pin_and_number_eight_at_most() {
+        let mut s = State::new(limits());
+        s.setup("Dad", "1234", 0).unwrap();
+        assert_eq!(s.add_visitor("   ", NOW).unwrap_err().status, 400);
+        let ana = s.add_visitor("Ana", NOW).unwrap();
+        let p = s.person(ana).unwrap();
+        assert_eq!((p.role.as_str(), p.pin.as_str()), (GUEST, ""));
+        // Two guests, two accounts; names still have to differ.
+        assert_eq!(s.add_visitor("ana", NOW).unwrap_err().status, 409);
+        for i in 1..MAX_GUESTS {
+            s.add_visitor(&format!("Guest {i}"), NOW).unwrap();
+        }
+        let full = s.add_visitor("One more", NOW).unwrap_err();
+        assert_eq!((full.status, full.code), (409, "full"));
+        // Members can still join while the guest room is full.
+        s.signup("Aunt May", "5678", NOW).unwrap();
+    }
+
+    #[test]
+    fn idle_guests_go_after_ninety_days_with_their_data() {
+        let mut s = State::new(limits());
+        s.setup("Dad", "1234", 0).unwrap();
+        let ana = s.add_visitor("Ana", NOW).unwrap();
+        let bo = s.add_visitor("Bo", NOW).unwrap();
+        s.person_mut(bo).unwrap().last_seen = NOW + 80 * 86_400;
+        assert!(!s.purge_idle_guests(NOW + 90 * 86_400));
+        assert!(s.purge_idle_guests(NOW + 91 * 86_400));
+        assert!(s.person(ana).is_none(), "unused for 91 days");
+        assert!(s.person(bo).is_some(), "seen 11 days ago");
+        // A full guest room makes space by clearing idle guests first.
+        for i in 0..MAX_GUESTS - 1 {
+            s.add_visitor(&format!("Guest {i}"), NOW).unwrap();
+        }
+        assert!(s.add_visitor("Late", NOW + 200 * 86_400).is_ok());
     }
 
     #[test]

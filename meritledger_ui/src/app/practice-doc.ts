@@ -29,7 +29,7 @@ export function stepKind(key: string): StepKind {
 }
 
 export function newStep(kind: string): PracticeStep {
-  return { kind, title: '', text: '', minutes: 0, count: 0, timer: '', logs_as: '', note: '', ...stepKind(kind).defaults };
+  return { kind, title: '', text: '', minutes: 0, count: 0, timer: '', logs_as: '', note: '', book: '', ...stepKind(kind).defaults };
 }
 
 /** "Recite: Heart Sutra", or the step's own heading. */

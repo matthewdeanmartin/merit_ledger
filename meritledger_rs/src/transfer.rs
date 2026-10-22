@@ -134,6 +134,7 @@ pub fn export(
             })
             .collect(),
         practices: state.practices.clone(),
+        readings: state.readings.clone(),
     })
 }
 
@@ -400,6 +401,33 @@ impl State {
         }
         self.import_vows(doc, &person_map, apply, &mut report);
         self.import_practices(doc, &person_map, &kind_map, apply, &mut report);
+        // Reading lists: a book someone already has (same work, or title) stays.
+        let mut next_reading = self.next_reading;
+        for r in &doc.readings {
+            let Some(&person) = person_map.get(&r.person) else {
+                continue;
+            };
+            let have = self.readings.iter().any(|q| {
+                q.person == person
+                    && ((!r.work.is_empty() && q.work == r.work) || q.title == r.title)
+            });
+            if have || self.readings.len() + report.readings_added as usize >= self.limits.readings
+            {
+                continue;
+            }
+            report.readings_added += 1;
+            if apply {
+                self.readings.push(crate::messages::StoredReading {
+                    id: next_reading,
+                    person,
+                    ..r.clone()
+                });
+            }
+            next_reading += 1;
+        }
+        if apply {
+            self.next_reading = next_reading;
+        }
         if self.entries.len() > self.limits.entries {
             return Err(format!(
                 "That would put {} entries in the recent window; the board holds {}",

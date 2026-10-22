@@ -298,6 +298,16 @@ impl State {
                         return bad("it logs as a practice that doesn't exist".into());
                     }
                 }
+                let book = e.book.trim();
+                let book_ok = book.is_empty()
+                    || crate::reading::is_work(book)
+                    || book
+                        .strip_prefix('r')
+                        .and_then(|id| id.parse::<u32>().ok())
+                        .is_some_and(|id| self.readings.iter().any(|r| r.id == id));
+                if !book_ok {
+                    return bad("no such book".into());
+                }
                 let note = e.note.trim();
                 if note.chars().count() > NOTE_MAX {
                     return bad(format!("notes are at most {NOTE_MAX} characters"));
@@ -311,6 +321,7 @@ impl State {
                     timer: timer.to_string(),
                     logs_as: logs_as.to_string(),
                     note: note.to_string(),
+                    book: book.to_string(),
                 })
             })
             .collect()
@@ -457,7 +468,16 @@ impl State {
         now: Option<u64>,
     ) -> Result<Vec<u32>, ApiError> {
         let (me, admin, _) = person_of(actor, "practices")?;
-        let doc = self.practice(Viewer { id: me, admin }, id)?.clone();
+        let doc = self
+            .practice(
+                Viewer {
+                    id: me,
+                    admin,
+                    outsider: false,
+                },
+                id,
+            )?
+            .clone();
         let mut ids = Vec::new();
         for e in doc.elements.iter().filter(|e| !e.logs_as.is_empty()) {
             let Some(kind) = self.kind(&e.logs_as) else {
@@ -617,6 +637,7 @@ mod tests {
         let theirs = Viewer {
             id: guest,
             admin: false,
+            outsider: false,
         };
         assert!(s.practices_for(theirs).is_empty());
         assert_eq!(s.practice(theirs, id).unwrap_err().status, 404);

@@ -35,6 +35,20 @@ pub enum Actor {
 pub struct Viewer {
     pub id: u32,
     pub admin: bool,
+    /// A guest or someone not signed in: sees only what's public (plus a
+    /// guest's own), never "generic" household detail.
+    pub outsider: bool,
+}
+
+impl Viewer {
+    /// Not signed in (account-less browsing of the intranet).
+    pub fn anonymous() -> Viewer {
+        Viewer {
+            id: 0,
+            admin: false,
+            outsider: true,
+        }
+    }
 }
 
 impl Actor {
@@ -405,6 +419,7 @@ impl State {
             rejoiced_by: Vec::new(),
             deleted: false,
             client_id: client_id.to_string(),
+            reading: 0,
         });
         Ok(id)
     }
@@ -422,7 +437,14 @@ impl State {
             .cloned()
             .ok_or_else(|| ApiError::not_found("No such entry"))?;
         let view = self
-            .entry_view(Viewer { id: me, admin }, &entry)
+            .entry_view(
+                Viewer {
+                    id: me,
+                    admin,
+                    outsider: false,
+                },
+                &entry,
+            )
             .filter(|v| v.can_rejoice)
             .ok_or_else(|| {
                 ApiError::new(
@@ -452,6 +474,14 @@ impl State {
         if let Some(e) = self.entries.iter_mut().find(|e| e.id == id) {
             e.rejoiced_by.push(me);
         }
+        self.notify(
+            entry.person,
+            crate::notify::REJOICE,
+            id,
+            me,
+            "",
+            now.unwrap_or(0),
+        );
         Ok(mine)
     }
 
@@ -571,6 +601,11 @@ impl State {
     pub fn entry_view(&self, viewer: Viewer, entry: &StoredEntry) -> Option<EntryView> {
         let own = viewer.admin || (viewer.id != 0 && viewer.id == entry.person);
         if entry.visibility == "private" && !own {
+            return None;
+        }
+        // Guests and visitors see what's public, not "generic" household
+        // detail (owner, 2026-10-21).
+        if viewer.outsider && !own && entry.visibility != "public" {
             return None;
         }
         let kind = self.kind(&entry.kind).unwrap_or_else(|| StoredKind {
@@ -836,6 +871,7 @@ mod tests {
                 Viewer {
                     id: dad,
                     admin: true,
+                    outsider: false,
                 },
                 dad,
                 Some(NOON),
@@ -856,6 +892,7 @@ mod tests {
         let from_dad = Viewer {
             id: dad,
             admin: false,
+            outsider: false,
         };
         let seen = s.entries_for(
             from_dad,
@@ -873,6 +910,7 @@ mod tests {
             Viewer {
                 id: kid,
                 admin: false,
+                outsider: false,
             },
             kid,
             Date::parse("2026-10-18").unwrap(),
@@ -900,6 +938,7 @@ mod tests {
                 Viewer {
                     id: kid,
                     admin: false,
+                    outsider: false,
                 },
                 s.entries.iter().find(|e| e.id == id).unwrap(),
             )
@@ -936,7 +975,8 @@ mod tests {
             s.update_entry(
                 Viewer {
                     id: guest,
-                    admin: false
+                    admin: false,
+                    outsider: false
                 },
                 id,
                 &change,
@@ -950,6 +990,7 @@ mod tests {
             Viewer {
                 id: kid,
                 admin: false,
+                outsider: false,
             },
             id,
             &change,
@@ -961,7 +1002,8 @@ mod tests {
             s.update_entry(
                 Viewer {
                     id: dad,
-                    admin: true
+                    admin: true,
+                    outsider: false
                 },
                 id,
                 &change,
@@ -977,6 +1019,7 @@ mod tests {
             Viewer {
                 id: dad,
                 admin: true,
+                outsider: false,
             },
             id,
         )
@@ -1149,6 +1192,7 @@ mod tests {
                 Viewer {
                     id: dad,
                     admin: true,
+                    outsider: false,
                 },
                 &s.entries[0],
             )
@@ -1171,6 +1215,7 @@ mod tests {
                 Viewer {
                     id: 0,
                     admin: false,
+                    outsider: false,
                 },
                 &entry,
             )
@@ -1183,6 +1228,7 @@ mod tests {
                 Viewer {
                     id: kid,
                     admin: false,
+                    outsider: false,
                 },
                 &entry,
             )
@@ -1192,7 +1238,8 @@ mod tests {
             !s.entry_view(
                 Viewer {
                     id: dad,
-                    admin: true
+                    admin: true,
+                    outsider: false
                 },
                 &entry
             )

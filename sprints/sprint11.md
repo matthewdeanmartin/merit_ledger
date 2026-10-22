@@ -1,5 +1,5 @@
 # Sprint 11 — Mastodon sign-in and publishing
-**State:** not started
+**State:** done 2026-10-19 (desktop, mock walk, board); live posts with the owner pending
 **Depends on:** 4, 10   **Parallel with:** 12
 
 ## Goal
@@ -19,7 +19,18 @@ publish no noise.
   category text. `private` and noise items never publish.
 - Publishing is per item (a "share" button), and each person can switch on auto-publish for content.
 
-## Questions for the owner
+## Questions for the owner (answered with defaults, review in place)
+1. **As whom:** the person's own account when they've linked one (the link asks for
+   `write:statuses` and keeps the token). Otherwise the household bot, prefixed with their
+   name ("Kid: 📿 Daimoku · 108×").
+2. **Visibility:** unlisted by default. Each person can pick public, unlisted or followers-only
+   in Settings.
+3. **Template:** "🧘 Meditation · 30 min" plus the note. Vow posts are "🪷 Title", the text,
+   and "(On my vow: …)". The board's link is added only on a `.local` instance like mastomini,
+   because it doesn't resolve elsewhere.
+
+The original questions:
+
 1. Does publishing post **as the person** (their own account, which needs a stored `write:statuses` token)
    or **as the household bot**, mentioning them? The proposal: own account when linked, otherwise the bot.
 2. Post visibility on Mastodon: public, unlisted or followers-only by default?
@@ -45,5 +56,71 @@ publish no noise.
 ## Out of scope
 Reading timelines, following, replies.
 
+## What was built
+- **miniframework** (`crates/miniframework/src/oauth.rs`): a self-contained, additive patch
+  with a new test.
+  - `Config.extra_scopes` (registered with every instance; a stored registration without them
+    is redone).
+  - `OAuth::start_keeping_token` (asks for the extra scopes and keeps the token) and
+    `take_token`.
+  - `OAuth::revoke`.
+  - Plain sign-ins still ask only to read the account, and gamematcher compiles unchanged.
+  - **Uncommitted in the microcontroller repo; the owner commits it.**
+- **`publish.rs`:** `publishable(item, link) -> Option<String>`, the whole rule.
+  - Public content kinds post in full; generic ones post their category.
+  - Private entries, demerits, repentance and noise never post, and nor do posts on non-public
+    vows.
+  - The truth table covers every built-in kind × every visibility.
+  - It also links an identity to a person (one person per account), and holds the publishing
+    preferences.
+- **The outbox** (`outbound.rs`) gains `status` jobs:
+  - Post, edit and delete, as the person (their link's token in the Kv, `tk<person>`, apart from
+    the snapshot) or the bot.
+  - Published items' status ids are remembered (up to 512), so edits and deletes follow and
+    re-sharing is a no-op.
+  - An edit or delete that arrives while its post is in flight waits behind it (found by the
+    walk).
+  - Unlinking queues a revoke.
+  - The OAuth steps run on the same worker.
+- **Routes:**
+  - `GET /api/v1/auth/providers`, `POST /api/v1/auth/oauth/start` (sign in, or `link` the
+    signed-in person) and `GET /api/v1/auth/oauth/{ticket}`.
+  - `GET /auth/callback` → `/signin/finishing`.
+  - `DELETE /api/v1/me/mastodon`.
+  - `POST /api/v1/entries/{id}/publish` and `/api/v1/posts/{id}/publish`.
+  - The `/me` PATCH takes `auto_publish` and `publish_visibility`.
+- **Following:** `mutate` diffs entries, posts and vows. New fresh content auto-publishes for
+  people who switched it on (imports, being old, never do). Changes edit the status; deletes, or
+  turning something private, delete it.
+- **Sign-in:** "Sign in with Mastodon" works only for accounts already linked from Settings
+  (signed in with a PIN). There are no new accounts by Mastodon.
+- **Instances:** mastomini (household CA) and mastodon.social (public CAs). On the desktop,
+  `MERITLEDGER_MASTODON_MOCK=<url>` adds a mock.
+- **UI:**
+  - Sign-in buttons per instance, and the `/signin/finishing` page.
+  - A Mastodon section in Settings: link or unlink, auto-share, visibility.
+  - ↗ on your own shareable entries, and "Share to Mastodon" on public vows' posts.
+- **Tools:**
+  - `tools/mock_mastodon.py`: gamematcher's mock plus statuses and scopes.
+  - `tools/mastodon_walk.py`: links, shares, deletes and signs in over HTTP against it.
+
+## Exit criteria
+- [x] The `publishable` truth table is fully tested (`publish.rs`), plus API tests
+  (`tests/publish.rs`). No private, demerit or noise item produces text.
+- [x] The walk passes against the mock. Linking, sharing (status appears), deleting the entry
+  (status deleted) and Mastodon sign-in all work against the desktop server, with a fresh state
+  each run.
+- [ ] **Live:** one post to mastomini and one to a test account on mastodon.social, with the owner
+  watching. Link in Settings, then ↗ on a sit.
+- [x] Deleting an entry deletes its status on the mock (the walk, step 4).
+
 ## Handoff
-_(fill in)_
+- **The board after this sprint:** 55 KB internal RAM free, with a low point of 46 KB.
+- **Edits** use `PUT /api/v1/statuses/:id` (Mastodon 3.5+).
+- **Statuses aren't removed on unlink:** unlinking leaves past statuses in place, as the UI says.
+- **The board stores tokens in plain NVS:** flash isn't encrypted. That's the
+  documented trade-off (the framework's OAuth spec); unlinking revokes.
+- **Later:**
+  - Admin-configured instances (gamematcher has them).
+  - Timelines, follows, replies (out of scope).
+  - Showing "shared" on entries (the board knows; the views don't carry it yet).

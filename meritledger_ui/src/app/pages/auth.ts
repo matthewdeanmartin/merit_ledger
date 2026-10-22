@@ -1,3 +1,4 @@
+import { beginOAuth, ProviderView } from '../mastodon';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Api, Person, problem } from '../api';
@@ -81,10 +82,28 @@ export class Setup {
               <li class="muted">Nobody here can sign in yet. Ask an admin to give you a PIN.</li>
             }
           </ul>
+        @if (providers().length) {
+          <p class="muted small">Or, if you've linked your Mastodon account:</p>
+          <div class="row">
+            @for (p of providers(); track p.id) {
+              <button type="button" class="secondary" [disabled]="busy()" (click)="mastodon(p.id)">Sign in with {{ p.name }}</button>
+            }
+          </div>
+        }
         }
         @if (api.status()?.signup_open) {
-          <p class="aside">Visiting? <a routerLink="/signup">Make a guest account</a></p>
+          <h2>Visiting?</h2>
+          <p class="muted small">No PIN needed. Your guest account lives on this phone, and it's cleared after
+            90 days unused.</p>
+          <form class="row" (submit)="visit($event)">
+            <label class="grow">Your name <input autocomplete="nickname" maxlength="32" required (input)="guestName.set(v($event))" /></label>
+            <button type="submit" [disabled]="busy() || !guestName().trim()">Start my visit</button>
+          </form>
+          @if (guestError()) { <p class="error" role="alert">{{ guestError() }}</p> }
+          <p class="aside">Here to stay? <a routerLink="/signup">Make an account with a PIN</a></p>
         }
+        <p class="aside">Just looking? <a routerLink="/house">Look around without an account</a>: practices,
+          texts, the calendar and books are open to everyone.</p>
       } @else {
         <h1>Hello, {{ picked()!.display_name }}</h1>
         <form (submit)="submit($event)">
@@ -103,6 +122,7 @@ export class Setup {
 })
 export class SignIn implements OnInit {
   readonly api = inject(Api);
+  readonly providers = signal<ProviderView[]>([]);
   private readonly router = inject(Router);
   readonly people = signal<Person[]>([]);
   readonly loading = signal(true);
@@ -112,14 +132,45 @@ export class SignIn implements OnInit {
   readonly busy = signal(false);
   readonly v = value;
   readonly initials = initials;
+  readonly guestName = signal('');
+  readonly guestError = signal('');
+
+  async visit(event: Event): Promise<void> {
+    event.preventDefault();
+    this.busy.set(true);
+    this.guestError.set('');
+    try {
+      await this.api.visit(this.guestName());
+      await this.router.navigateByUrl('/');
+    } catch (e) {
+      this.guestError.set(problem(e));
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     try {
       this.people.set(signInOrder(await this.api.people()));
+      this.api
+        .get<{ providers: ProviderView[] }>('/api/v1/auth/providers', 'ProviderList')
+        .then((r) => this.providers.set(r.providers))
+        .catch(() => undefined);
     } catch (e) {
       this.error.set(problem(e));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async mastodon(provider: string): Promise<void> {
+    this.busy.set(true);
+    this.error.set('');
+    try {
+      await beginOAuth(this.api, provider, false);
+    } catch (e) {
+      this.error.set(e instanceof Error ? e.message : problem(e));
+      this.busy.set(false);
     }
   }
 
@@ -151,14 +202,15 @@ export class SignIn implements OnInit {
   }
 }
 
-/** A guest makes their own account while sign-up is open. */
+/** Anyone can make a PIN account while sign-up is open (an admin can remove it). */
 @Component({
   selector: 'ml-signup',
   imports: [RouterLink],
   template: `
     <section class="card narrow">
-      <h1>Guest account</h1>
-      <p>Pick a name the household will recognize and a PIN. An admin can make you a full member later.</p>
+      <h1>Make an account</h1>
+      <p>Pick a name the household will recognize and a PIN. You'll sign in by tapping your name.
+        Only visiting? <a routerLink="/signin">Start a guest visit</a> instead: no PIN needed.</p>
       <form (submit)="submit($event)">
         <label>Your name <input autocomplete="nickname" maxlength="32" required (input)="name.set(v($event))" /></label>
         <label>PIN (4–8 digits)

@@ -247,6 +247,12 @@ impl Tz {
         c.name()?;
         // POSIX offsets are west-positive; ours are east-positive.
         let std_offset = -c.time()?;
+        // POSIX allows 0 to 24 hours either way (found by tests/props.rs:
+        // "AAA27" parsed).
+        let in_range = |offset: i64| offset.abs() <= 24 * 3600;
+        if !in_range(std_offset) {
+            return Err("offsets are at most 24 hours".into());
+        }
         if c.peek().is_none() {
             return Ok(Tz {
                 std_offset,
@@ -258,6 +264,9 @@ impl Tz {
             Some(b',') | None => std_offset + 3600,
             _ => -c.time()?,
         };
+        if !in_range(dst_offset) {
+            return Err("offsets are at most 24 hours".into());
+        }
         if !c.eat(b',') {
             return Err("daylight time needs start and end rules".into());
         }

@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ContentApi } from '../content-api';
 import { Api, KindInput, KindView, problem } from '../api';
 import { amountLabel, groupKinds, move } from '../practice';
 
@@ -100,6 +101,7 @@ function value(event: Event): string {
 })
 export class Practices implements OnInit {
   readonly api = inject(Api);
+  private readonly content = inject(ContentApi);
   readonly kinds = signal<KindView[]>([]);
   readonly pins = signal<string[]>([]);
   readonly error = signal('');
@@ -118,7 +120,7 @@ export class Practices implements OnInit {
   readonly v = value;
 
   async ngOnInit(): Promise<void> {
-    await this.attempt(async () => this.load(await this.api.kinds()));
+    await this.attempt(async () => this.load(await this.content.kinds()));
   }
 
   /** Pinned order comes from Today; the kind list only flags membership. */
@@ -130,15 +132,15 @@ export class Practices implements OnInit {
 
   async toggle(k: KindView): Promise<void> {
     const pins = this.pins().includes(k.key) ? this.pins().filter((p) => p !== k.key) : [...this.pins(), k.key];
-    await this.attempt(async () => this.load(await this.api.setPins(pins)));
+    await this.attempt(async () => this.load(await this.content.setPins(pins)));
   }
 
   async reorder(key: string, by: -1 | 1): Promise<void> {
-    await this.attempt(async () => this.load(await this.api.setPins(move(this.pins(), key, by))));
+    await this.attempt(async () => this.load(await this.content.setPins(move(this.pins(), key, by))));
   }
 
   async archive(k: KindView): Promise<void> {
-    await this.attempt(async () => this.load(await this.api.updateKind(k.key, { archived: !k.archived })));
+    await this.attempt(async () => this.load(await this.content.updateKind(k.key, { archived: !k.archived })));
   }
 
   async add(event: Event): Promise<void> {
@@ -154,10 +156,10 @@ export class Practices implements OnInit {
       household: this.household() && !this.guest(),
     };
     await this.attempt(async () => {
-      const kinds = await this.api.addKind(input);
+      const kinds = await this.content.addKind(input);
       // Pin the new one so it's on Today right away.
       const added = kinds.filter((k) => !k.builtin).sort((a, b) => +b.key.slice(1) - +a.key.slice(1))[0];
-      await this.load(added ? await this.api.setPins([...this.pins(), added.key]) : kinds);
+      await this.load(added ? await this.content.setPins([...this.pins(), added.key]) : kinds);
       this.name.set('');
       this.icon.set('');
       this.category.set('');

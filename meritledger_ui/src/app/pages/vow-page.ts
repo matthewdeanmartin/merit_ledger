@@ -117,6 +117,9 @@ function value(event: Event): string {
             <div class="row">
               <button type="button" class="link" (click)="startPostEdit(p)">Edit</button>
               <button type="button" class="link" (click)="deletePost(p)">Delete</button>
+              @if (d.vow.visibility === 'public') {
+                <button type="button" class="link" (click)="sharePost(p)">Share to Mastodon</button>
+              }
             </div>
           }
         </article>
@@ -286,6 +289,13 @@ export class VowPage {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  async sharePost(p: PostView): Promise<void> {
+    await this.run(async () => {
+      const r = await this.api.send<{ state: string; as_whom: string }>('POST', `/api/v1/posts/${p.id}/publish`, undefined, 'PublishResult');
+      alert(r.state === 'already' ? 'Already shared.' : `Sharing to Mastodon as ${r.as_whom}.`);
+    });
   }
 
   async deletePost(p: PostView): Promise<void> {

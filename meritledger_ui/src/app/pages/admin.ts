@@ -1,4 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { AdminApi } from '../admin-api';
 import { AdminPerson, AdminPersonUpdate, Api, ImportReport, problem, Role, ROLES, Settings, StorageInfo } from '../api';
 import { SYSTEMS } from '../calendar';
 import { importSummary, size } from '../people';
@@ -10,6 +12,7 @@ function value(event: Event): string {
 /** The household: add people (kids included), roles, PINs, sign-up, storage. */
 @Component({
   selector: 'ml-admin',
+  imports: [RouterLink],
   template: `
     <section class="card">
       <h1>The household</h1>
@@ -59,6 +62,11 @@ function value(event: Event): string {
       </form>
     </section>
 
+    <section class="card">
+      <h2>Messages</h2>
+      <p class="muted small">The household Mastodon bot (DMs) and Brevo email (reminders).</p>
+      <a routerLink="/admin/messages" class="button secondary small">Set up messages</a>
+    </section>
     <section class="card">
       <h2>Sign-up</h2>
       <label class="check">
@@ -182,6 +190,7 @@ function value(event: Event): string {
 })
 export class Admin implements OnInit {
   readonly api = inject(Api);
+  private readonly admin = inject(AdminApi);
   readonly roles = ROLES;
   readonly people = signal<AdminPerson[]>([]);
   readonly storage = signal<StorageInfo | null>(null);
@@ -212,22 +221,22 @@ export class Admin implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.attempt(async () => {
-      const [people, settings, storage] = await Promise.all([this.api.adminPeople(), this.api.settings(), this.api.storage()]);
+      const [people, settings, storage] = await Promise.all([this.admin.adminPeople(), this.admin.settings(), this.admin.storage()]);
       this.people.set(people);
       this.signupOpen.set(settings.signup_open);
       this.timezone.set(settings.timezone);
       this.zoneLabel.set(settings.timezone_label);
-      this.zones.set(await this.api.timezones());
+      this.zones.set(await this.admin.timezones());
       this.settings.set(settings);
       this.storage.set(storage);
-      if (storage.sd_present) this.backups.set(await this.api.backups());
+      if (storage.sd_present) this.backups.set(await this.admin.backups());
     });
   }
 
   async backupNow(): Promise<void> {
     await this.attempt(async () => {
-      this.backups.set(await this.api.backupNow());
-      this.storage.set(await this.api.storage());
+      this.backups.set(await this.admin.backupNow());
+      this.storage.set(await this.admin.storage());
     });
   }
 
@@ -244,16 +253,16 @@ export class Admin implements OnInit {
         throw new Error("That file isn't JSON, so it isn't a Merit Ledger export.");
       }
       this.pending = doc;
-      this.report.set(await this.api.importExport(doc, true));
+      this.report.set(await this.admin.importExport(doc, true));
     });
   }
 
   async importNow(): Promise<void> {
     if (!this.pending) return;
     await this.attempt(async () => {
-      this.report.set(await this.api.importExport(this.pending, false));
+      this.report.set(await this.admin.importExport(this.pending, false));
       this.pending = null;
-      const [people, storage] = await Promise.all([this.api.adminPeople(), this.api.storage()]);
+      const [people, storage] = await Promise.all([this.admin.adminPeople(), this.admin.storage()]);
       this.people.set(people);
       this.storage.set(storage);
     });
@@ -262,14 +271,14 @@ export class Admin implements OnInit {
   async add(event: Event): Promise<void> {
     event.preventDefault();
     await this.attempt(async () => {
-      this.people.set(await this.api.addPerson(this.name(), this.role(), this.pin(), ''));
+      this.people.set(await this.admin.addPerson(this.name(), this.role(), this.pin(), ''));
       this.name.set('');
       this.pin.set('');
     });
   }
 
   async update(p: AdminPerson, change: AdminPersonUpdate): Promise<void> {
-    await this.attempt(async () => this.people.set(await this.api.updatePerson(p.id, change)));
+    await this.attempt(async () => this.people.set(await this.admin.updatePerson(p.id, change)));
     if (p.id === this.api.me()?.id) await this.api.refresh();
   }
 
@@ -283,15 +292,15 @@ export class Admin implements OnInit {
     const keep = globalThis.confirm(
       `Keep ${p.display_name}'s practice history? OK keeps it (shown as "a former member"); Cancel deletes it.`,
     );
-    await this.attempt(async () => this.people.set(await this.api.removePerson(p.id, keep)));
+    await this.attempt(async () => this.people.set(await this.admin.removePerson(p.id, keep)));
   }
 
   async toggleSignup(): Promise<void> {
-    await this.attempt(async () => this.signupOpen.set((await this.api.updateSettings({ signup_open: !this.signupOpen() })).signup_open));
+    await this.attempt(async () => this.signupOpen.set((await this.admin.updateSettings({ signup_open: !this.signupOpen() })).signup_open));
   }
 
   async setCalendar(change: Partial<Settings>): Promise<void> {
-    await this.attempt(async () => this.settings.set(await this.api.updateSettings(change)));
+    await this.attempt(async () => this.settings.set(await this.admin.updateSettings(change)));
   }
 
   /** A place from the list, or the phone's own zone. */
@@ -309,7 +318,7 @@ export class Admin implements OnInit {
   private async applyZone(zone: string): Promise<void> {
     this.zoneSaved.set(false);
     await this.attempt(async () => {
-      const s = await this.api.updateSettings({ timezone: zone });
+      const s = await this.admin.updateSettings({ timezone: zone });
       this.timezone.set(s.timezone);
       this.zoneLabel.set(s.timezone_label);
       this.zoneSaved.set(true);

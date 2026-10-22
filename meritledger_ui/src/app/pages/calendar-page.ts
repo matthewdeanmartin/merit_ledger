@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ContentApi } from '../content-api';
 import { Api, CalendarDay, CalendarView, Observance, problem } from '../api';
 import { addMonths, firstDay, grid, lastDay, Month, monthOf, monthTitle, phaseIcon, SYSTEMS, systemName } from '../calendar';
 import { dayHeading } from '../practice';
@@ -80,6 +81,7 @@ import { dayHeading } from '../practice';
 })
 export class CalendarPage implements OnInit {
   private readonly api = inject(Api);
+  private readonly content = inject(ContentApi);
   readonly systems = SYSTEMS;
   readonly weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   readonly month = signal<Month>(monthOf(new Date().toISOString().slice(0, 10)));
@@ -102,7 +104,7 @@ export class CalendarPage implements OnInit {
   async ngOnInit(): Promise<void> {
     const me = this.api.me();
     // The person's own calendar, else the household's (the board decides).
-    const first = await this.api.calendar(firstDay(this.month()), lastDay(this.month())).catch(() => null);
+    const first = await this.content.calendar(firstDay(this.month()), lastDay(this.month())).catch(() => null);
     if (first) this.system.set(me?.calendar || first.system);
     this.today.set(new Date().toLocaleDateString('en-CA'));
     await this.load();
@@ -126,7 +128,7 @@ export class CalendarPage implements OnInit {
   private async load(): Promise<void> {
     this.error.set('');
     try {
-      this.view.set(await this.api.calendar(firstDay(this.month()), lastDay(this.month()), this.system()));
+      this.view.set(await this.content.calendar(firstDay(this.month()), lastDay(this.month()), this.system()));
     } catch (e) {
       this.error.set(problem(e));
     }

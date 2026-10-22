@@ -404,6 +404,9 @@ impl State {
         if vow.visibility == "private" && !own {
             return None;
         }
+        if viewer.outsider && !own && vow.visibility != "public" {
+            return None;
+        }
         let generic = !own && vow.visibility == "generic";
         let shown = |e: &&StoredVowEvent| own || e.action == "repair" || e.visibility == "public";
         let events: Vec<VowEventView> = if generic {
@@ -813,7 +816,11 @@ mod tests {
     }
 
     fn sees(id: u32) -> Viewer {
-        Viewer { id, admin: false }
+        Viewer {
+            id,
+            admin: false,
+            outsider: false,
+        }
     }
 
     fn vow(text: &str, visibility: &str) -> VowInput {
@@ -918,6 +925,7 @@ mod tests {
                 Viewer {
                     id: guest,
                     admin: true,
+                    outsider: false,
                 },
                 vec!["Private one", "Generic one", "Public one"],
             ),

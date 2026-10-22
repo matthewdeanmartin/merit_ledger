@@ -80,7 +80,40 @@ look at placement first.
 - Windows curl needs `--ssl-no-revoke` for HTTPS checks against the household CA (it publishes no
   revocation list). It still verifies the chain and hostname; never use `-k`.
 
+## After an update
+
+- **Touch:** the boot log should say `touch: AXS5106L answers`. If taps land in the wrong place,
+  touch a corner and open *Household → Messages → The board's screen*. "Last touch" shows the raw
+  and the on-screen point; tick the mirror boxes until they agree. No reflash is needed.
+- **Load:** `uv run tools/load_walk.py --url https://<board ip> --ca meritledger_rs/certs/household-ca.crt
+  --person <id> --pin <PIN> --seconds 300`. Four phones log sits, and the walk deletes them
+  afterwards. Watch `heap` (the internal free low point should stay above about 24 KiB) and any
+  "REBOOTED" line.
+- **Rate limits:** sign-up and setup, OAuth start, guest RSVPs, `frame.bmp` and export each have a
+  token bucket (`METER` in `api.rs`). A refusal is 429 "busy" with `Retry-After`, or 503 when the
+  whole board's budget is used up. PIN sign-in has its own lockout.
+- **Before the clock is set** (the first minute after boot): reads work. Writes that stamp a time
+  (entries, calls, events, RSVPs, reminders, backups) answer 503 `clock_not_set`, and the screen
+  says it's setting the clock.
+
 ## Deployments
+
+### 2026-10-19: Sprints 13–14 (touch menu, hardening)
+
+- The owner attached the board and said to go ahead. COM5, MAC `28:84:85:b1:70:e4`, 16 MB, and
+  `make board-check` confirmed the partition table.
+- `make update`: app 2,979,792 bytes, written at `0x10000` only, hash verified. It came back on
+  its own: build `4d813dc+`, clock synced.
+- Boot log: `screen: JD9853 ready`, then `touch: AXS5106L answers (id 00 00 00)`. The chip ACKs
+  at 0x63 with reset on pin 48, but its ID register reads zeros; a real touch confirms it.
+- Health: 49 KiB internal free (lowest 38 KiB), largest block 31 KiB, 0 failed allocations,
+  -85 dBm (warn, as before).
+- Later, a series of touch fixes and A/B builds, all `make update` with the MAC checked. The
+  last one is on the board: INT 48, reset 47, write-STOP-read; the chip ID is `510601`. Touch
+  works, but every touch is a long press (open; see [docs/TOUCH.md](docs/TOUCH.md)).
+- Wi-Fi dropped at minute 11 and then failed to authenticate (reason 2) on every build, even with
+  touch disabled. The board is upstairs at the edge of range. miniframework now logs a scan while
+  Wi-Fi is down.
 
 ### 2026-10-19: ops health endpoint (SRE sprint 0)
 

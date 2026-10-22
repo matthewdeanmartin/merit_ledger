@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, OnDestroy, OnInit, signal } from '@angular/core';
+import { ContentApi } from '../content-api';
 import { Api, KindView, problem, TimerInput } from '../api';
 import { BellSchedule, Timbre } from '../bell';
 import { amountLabel } from '../practice';
@@ -161,6 +162,7 @@ function value(event: Event): string {
 })
 export class TimerPage implements OnInit, OnDestroy {
   readonly api = inject(Api);
+  private readonly content = inject(ContentApi);
   readonly sessions = inject(Sessions);
   readonly mode = signal<Mode>('pick');
   readonly presets = signal<TimerPreset[]>([]);
@@ -213,7 +215,7 @@ export class TimerPage implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     document.addEventListener('visibilitychange', this.onVisible);
     await this.attempt(async () => {
-      const [presets, kinds] = await Promise.all([this.api.timers(), this.api.kinds()]);
+      const [presets, kinds] = await Promise.all([this.content.timers(), this.content.kinds()]);
       this.presets.set(presets);
       this.kinds.set(kinds);
     });
@@ -324,6 +326,10 @@ export class TimerPage implements OnInit, OnDestroy {
     this.logged.set(credits);
     await this.release();
     if (credits.length === 0) return;
+    if (!this.api.me()) {
+      this.outcome.set('Not logged: you\'re looking around without an account. Sign in or start a guest visit to log sits.');
+      return;
+    }
     this.outcome.set('Saving…');
     try {
       const r = await this.sessions.finish(credits);
@@ -433,7 +439,7 @@ export class TimerPage implements OnInit, OnDestroy {
     event.preventDefault();
     await this.attempt(async () => {
       const e = this.editing();
-      this.presets.set(e ? await this.api.replaceTimer(e.key, this.input()) : await this.api.addTimer(this.input()));
+      this.presets.set(e ? await this.content.replaceTimer(e.key, this.input()) : await this.content.addTimer(this.input()));
       this.resetForm();
     });
   }
@@ -442,7 +448,7 @@ export class TimerPage implements OnInit, OnDestroy {
     const e = this.editing();
     if (!e) return;
     await this.attempt(async () => {
-      this.presets.set(await this.api.replaceTimer(e.key, this.input(true)));
+      this.presets.set(await this.content.replaceTimer(e.key, this.input(true)));
       this.resetForm();
     });
   }

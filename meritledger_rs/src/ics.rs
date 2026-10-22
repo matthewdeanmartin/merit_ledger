@@ -48,18 +48,30 @@ fn slug(s: &str) -> String {
 }
 
 /// A whole feed. `now` is UTC seconds (DTSTAMP).
+/// `20261018T230000Z` for UTC seconds `t`.
+pub fn utc_stamp(t: u64) -> String {
+    let d = Date::from_days((t / 86_400) as i64);
+    let s = t % 86_400;
+    format!(
+        "{}T{:02}{:02}{:02}Z",
+        compact(d),
+        s / 3600,
+        s % 3600 / 60,
+        s % 60
+    )
+}
+
+/// Content lines, escaped values and folding, for other calendars (events).
+pub fn line(name: &str, value: &str, out: &mut String) {
+    fold(&format!("{name}:{}", escape(value)), out);
+}
+
+pub fn raw_line(line: &str, out: &mut String) {
+    fold(line, out);
+}
+
 pub fn feed(title: &str, list: &[Observance], now: u64) -> String {
-    let stamp = {
-        let d = Date::from_days((now / 86_400) as i64);
-        let s = now % 86_400;
-        format!(
-            "{}T{:02}{:02}{:02}Z",
-            compact(d),
-            s / 3600,
-            s % 3600 / 60,
-            s % 60
-        )
-    };
+    let stamp = utc_stamp(now);
     let mut out = String::new();
     for line in [
         "BEGIN:VCALENDAR",

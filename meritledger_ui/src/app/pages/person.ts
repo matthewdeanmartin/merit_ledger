@@ -7,6 +7,7 @@ import { EntryItem } from '../entry-item';
 import { Cell, cells, columns } from '../heatmap';
 import { amountLabel, dayHeading, visibilityLabel, VISIBILITIES } from '../practice';
 import { fivePart, takenItems, takenSummary } from '../precepts';
+import { progress, ReadingView } from '../books';
 import { isCurrent, stateLabel, vowDates } from '../vows';
 
 function value(event: Event): string {
@@ -100,6 +101,21 @@ const GAP = 2;
           </section>
         }
 
+        @if (reading().length) {
+          <section class="card">
+            <h2>Reading</h2>
+            <ul class="vows">
+              @for (b of reading(); track b.id) {
+                <li>
+                  <span><strong>{{ b.title }}</strong>{{ b.author ? ' · ' + b.author : '' }}</span>
+                  <span class="muted small">{{ b.status === 'done' ? 'Finished ' + b.finished : b.status === 'want' ? 'Wants to read' : progress(b.page, b.pages) }}{{ b.minutes ? ' · ' + b.minutes + ' min' : '' }}</span>
+                </li>
+              }
+            </ul>
+            @if (page.own) { <p><a routerLink="/books" class="button secondary small">My books</a></p> }
+          </section>
+        }
+
         @if (page.posts.length) {
           <section class="card">
             <h2>Posts</h2>
@@ -179,6 +195,8 @@ export class Person {
   readonly stateLabel = stateLabel;
   readonly vowDates = vowDates;
   readonly isCurrent = isCurrent;
+  readonly reading = signal<ReadingView[]>([]);
+  readonly progress = progress;
   /** Route parameter `/p/:id`. */
   readonly id = input.required<string>();
   readonly profile = signal<ProfileView | null>(null);
@@ -200,9 +218,15 @@ export class Person {
   private async load(id: number): Promise<void> {
     this.error.set('');
     try {
-      const [profile, vows] = await Promise.all([this.api.profile(id), this.content.vowsPage(id)]);
+      const [profile, vows] = await Promise.all([this.content.profile(id), this.content.vowsPage(id)]);
       this.profile.set(profile);
       this.vows.set(vows);
+      if (this.api.me()) {
+        this.api
+          .get<{ books: ReadingView[] }>(`/api/v1/reading?person=${id}`, 'ReadingList')
+          .then((r) => this.reading.set(r.books))
+          .catch(() => undefined);
+      }
       if (vows.precepts.length) this.sets.set(await this.content.precepts());
     } catch (e) {
       this.error.set(problem(e));

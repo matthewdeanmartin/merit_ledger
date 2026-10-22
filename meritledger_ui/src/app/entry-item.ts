@@ -1,6 +1,7 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Api, EntryView, problem } from './api';
+import { canShare } from './mastodon';
 import { dayHeading, entryLine } from './practice';
 
 /** One entry in the feed or on a profile, with "rejoice" (🙏) for others' merit. */
@@ -18,7 +19,11 @@ import { dayHeading, entryLine } from './practice';
       @if (e.note) { <span class="muted note">{{ e.note }}</span> }
       <span class="muted note">{{ day(e.date) }}</span>
       @if (error()) { <span class="error note">{{ error() }}</span> }
+      @if (shared()) { <span class="ok note">{{ shared() }}</span> }
     </span>
+    @if (shareable()) {
+      <button type="button" class="rejoice" [disabled]="busy() || !!shared()" title="Share to Mastodon" aria-label="Share to Mastodon" (click)="share()">↗</button>
+    }
     @if (e.can_rejoice || e.rejoices > 0) {
       <button type="button" class="rejoice" [class.on]="e.rejoiced_by_me"
         [disabled]="!e.can_rejoice || e.rejoiced_by_me || busy()"
@@ -37,6 +42,24 @@ export class EntryItem {
   readonly busy = signal(false);
   readonly error = signal('');
   readonly line = entryLine;
+  readonly shared = signal('');
+
+  shareable(): boolean {
+    return canShare(this.current(), this.api.me()?.id);
+  }
+
+  async share(): Promise<void> {
+    this.busy.set(true);
+    this.error.set('');
+    try {
+      const r = await this.api.send<{ state: string; as_whom: string }>('POST', `/api/v1/entries/${this.entry().id}/publish`, undefined, 'PublishResult');
+      this.shared.set(r.state === 'already' ? 'Already shared' : `Sharing to Mastodon as ${r.as_whom}`);
+    } catch (e) {
+      this.error.set(problem(e));
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   current(): EntryView {
     const u = this.updated();

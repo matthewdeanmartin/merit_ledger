@@ -198,13 +198,15 @@ fn vows_and_posts_follow_visibility() {
     assert!(dir.join("ml/posts/1.md").exists());
     let page =
         |cookie: Option<&str>| ok(call(&app, "GET", "/api/v1/people/1/vows", cookie, ""), 200);
-    for theirs in [page(Some(&kid)), page(None)] {
+    for (theirs, member) in [(page(Some(&kid)), true), (page(None), false)] {
         assert!(theirs.contains(r#""text":"Open""#), "{theirs}");
         assert!(
             !theirs.contains("Quiet") && !theirs.contains("Mine"),
             "{theirs}"
         );
-        assert!(theirs.contains(r#""generic":true"#), "{theirs}");
+        // The household sees the generic vow as "a vow"; visitors (and
+        // guests) see only public ones (owner, 2026-10-21).
+        assert_eq!(theirs.contains(r#""generic":true"#), member, "{theirs}");
         assert!(
             theirs.contains("Post 1") && !theirs.contains("Post 2"),
             "{theirs}"

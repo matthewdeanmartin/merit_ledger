@@ -37,6 +37,14 @@ export interface Me {
   created: number;
   /** Their own calendar; '' = the household's. */
   calendar: string;
+  /** For DMs from the household bot: `@name@mastomini.local`. */
+  mastodon: string;
+  dm_off: boolean;
+  email_off: boolean;
+  /** The linked Mastodon account (sign-in and sharing), or ''. */
+  linked: string;
+  auto_publish: boolean;
+  publish_visibility: string;
 }
 
 export interface AdminPerson {
@@ -217,6 +225,145 @@ export interface CategoryTotal {
   minutes: number;
 }
 
+// ---- notifications, reminders, events (Sprint 10) ------------------------------
+
+export interface NotificationView {
+  id: number;
+  kind: string;
+  text: string;
+  link: string;
+  count: number;
+  created: number;
+  read: boolean;
+}
+
+export interface NotificationList {
+  notifications: NotificationView[];
+  unread: number;
+}
+
+export interface Reminder {
+  id: number;
+  kind: 'daily' | 'observance';
+  time: string;
+  /** Weekdays, bit 0 = Monday; 0 = every day. */
+  days: number;
+  before: number;
+  observances: string;
+  text: string;
+  last_due: number;
+  off: boolean;
+}
+
+export type ReminderInput = Omit<Reminder, 'id' | 'last_due'>;
+
+export interface ReminderList {
+  reminders: Reminder[];
+  delivery: string;
+}
+
+export interface CallView {
+  id: number;
+  by: number;
+  by_name: string;
+  message: string;
+  when: string;
+  created: number;
+}
+
+export interface EventPerson {
+  person: number;
+  name: string;
+  answer: string;
+  bringing: string;
+}
+
+export interface GuestView {
+  id: number;
+  name: string;
+  answer: string;
+  bringing: string;
+  link: string;
+}
+
+export interface EventView {
+  id: number;
+  host: number;
+  host_name: string;
+  title: string;
+  start: number;
+  end: number;
+  place: string;
+  notes: string;
+  people: EventPerson[];
+  guests: GuestView[];
+  my_answer: string;
+  my_bringing: string;
+  can_edit: boolean;
+  cancelled: boolean;
+  rev: number;
+  ics: string;
+  guest: number;
+}
+
+export interface EventInput {
+  title: string;
+  start: number;
+  end: number;
+  place: string;
+  notes: string;
+  invitees: number[];
+  rev?: number;
+}
+
+export interface OutboxEntry {
+  id: number;
+  kind: string;
+  text: string;
+  state: string;
+  attempts: number;
+  error: string;
+  created: number;
+  next_at: number;
+}
+
+export interface DeliveryView {
+  bot_handle: string;
+  bot_instance: string;
+  bot_setup: string;
+  bot_error: string;
+  mail_sender: string;
+  mail_setup: string;
+  mail_error: string;
+  sent_today: number;
+  daily_limit: number;
+  mail_built_in: boolean;
+  jobs: OutboxEntry[];
+}
+
+export interface ScreenSettings {
+  /** Turned 180 degrees. */
+  flip: boolean;
+  /** Pixels in native byte order (try it if the colours look wrong). */
+  native: boolean;
+  /** Backlight, 5-60 %. */
+  brightness: number;
+  /** Taps land mirrored left-right / up-down? Flip them. */
+  touch_flip_x: boolean;
+  touch_flip_y: boolean;
+  /** The last touch the board saw, for setting the flips (read-only). */
+  last_touch: string;
+}
+
+export interface BotSetup {
+  instance: string;
+  token: string;
+  admin: string;
+  password: string;
+  username: string;
+  display_name: string;
+}
+
 // ---- build-a-practice (Sprint 8) ---------------------------------------------
 
 export interface PracticeStep {
@@ -229,6 +376,8 @@ export interface PracticeStep {
   timer: string;
   logs_as: string;
   note: string;
+  /** `read`: a reading-list book (`r12`) or an Open Library work. */
+  book: string;
 }
 
 export interface PracticeView {
@@ -494,6 +643,11 @@ export class Api {
     this.me.set(await this.send<Me>('POST', '/api/v1/auth/signup', { display_name, pin }, 'Me'));
   }
 
+  /** "I'm visiting": a guest account in this browser, no PIN. */
+  async visit(display_name: string): Promise<void> {
+    this.me.set(await this.send<Me>('POST', '/api/v1/auth/guest', { display_name }, 'Me'));
+  }
+
   async signIn(person: number, pin: string): Promise<void> {
     this.me.set(await this.send<Me>('POST', '/api/v1/auth/pin', { person, pin }, 'Me'));
   }
@@ -507,12 +661,7 @@ export class Api {
     return (await this.get<{ people: Person[] }>('/api/v1/people', 'PeopleList')).people;
   }
 
-  async calendar(from: string, to: string, system?: string): Promise<CalendarView> {
-    const q = `from=${from}&to=${to}${system ? `&system=${system}` : ''}`;
-    return this.get(`/api/v1/calendar?${q}`, 'CalendarView');
-  }
-
-  async updateMe(change: { display_name?: string; email?: string; calendar?: string }): Promise<void> {
+  async updateMe(change: { display_name?: string; email?: string; calendar?: string; mastodon?: string; dm_off?: boolean; email_off?: boolean; auto_publish?: boolean; publish_visibility?: string }): Promise<void> {
     this.me.set(await this.send<Me>('PATCH', '/api/v1/me', change, 'Me'));
   }
 
@@ -537,18 +686,6 @@ export class Api {
     return this.send('POST', '/api/v1/entries', { ...e, source: 'timer' }, 'TodayView');
   }
 
-  async timers(): Promise<TimerPreset[]> {
-    return (await this.get<{ timers: TimerPreset[] }>('/api/v1/timers', 'TimerList')).timers;
-  }
-
-  async addTimer(input: TimerInput): Promise<TimerPreset[]> {
-    return (await this.send<{ timers: TimerPreset[] }>('POST', '/api/v1/timers', input, 'TimerList')).timers;
-  }
-
-  async replaceTimer(key: string, input: TimerInput): Promise<TimerPreset[]> {
-    return (await this.send<{ timers: TimerPreset[] }>('PUT', `/api/v1/timers/${key}`, input, 'TimerList')).timers;
-  }
-
   async updateEntry(id: number, change: EntryChange): Promise<TodayView> {
     return this.send('PATCH', `/api/v1/entries/${id}`, change, 'TodayView');
   }
@@ -557,89 +694,9 @@ export class Api {
     return this.send('DELETE', `/api/v1/entries/${id}`, undefined, 'TodayView');
   }
 
-  async entries(person: number, from?: string, to?: string): Promise<EntryView[]> {
-    const q = [from && `from=${from}`, to && `to=${to}`].filter(Boolean).join('&');
-    return (await this.get<{ entries: EntryView[] }>(`/api/v1/people/${person}/entries${q ? `?${q}` : ''}`, 'EntryList')).entries;
-  }
-
-  async profile(person: number): Promise<ProfileView> {
-    return this.get(`/api/v1/people/${person}/profile`, 'ProfileView');
-  }
-
-  async feed(offset = 0, limit = 30): Promise<FeedView> {
-    return this.get(`/api/v1/feed?offset=${offset}&limit=${limit}`, 'FeedView');
-  }
-
   async rejoice(entry: number): Promise<EntryView> {
     return this.send('POST', `/api/v1/entries/${entry}/rejoice`, undefined, 'EntryView');
   }
 
-  async kinds(): Promise<KindView[]> {
-    return (await this.get<{ kinds: KindView[] }>('/api/v1/kinds', 'KindList')).kinds;
-  }
-
-  async addKind(input: KindInput): Promise<KindView[]> {
-    return (await this.send<{ kinds: KindView[] }>('POST', '/api/v1/kinds', input, 'KindList')).kinds;
-  }
-
-  async updateKind(key: string, change: { name?: string; icon?: string; default_amount?: number; visibility?: string; archived?: boolean }): Promise<KindView[]> {
-    return (await this.send<{ kinds: KindView[] }>('PATCH', `/api/v1/kinds/${key}`, change, 'KindList')).kinds;
-  }
-
-  async setPins(kinds: string[]): Promise<KindView[]> {
-    return (await this.send<{ kinds: KindView[] }>('PUT', '/api/v1/me/pins', { kinds }, 'KindList')).kinds;
-  }
-
-  // ---- admin ----------------------------------------------------------------
-
-  async adminPeople(): Promise<AdminPerson[]> {
-    return (await this.get<{ people: AdminPerson[] }>('/api/v1/admin/people', 'AdminPeopleList')).people;
-  }
-
-  async addPerson(display_name: string, role: Role, pin: string, email: string): Promise<AdminPerson[]> {
-    const body = { display_name, role, pin, email };
-    return (await this.send<{ people: AdminPerson[] }>('POST', '/api/v1/admin/people', body, 'AdminPeopleList')).people;
-  }
-
-  async updatePerson(id: number, change: AdminPersonUpdate): Promise<AdminPerson[]> {
-    return (await this.send<{ people: AdminPerson[] }>('PATCH', `/api/v1/admin/people/${id}`, change, 'AdminPeopleList'))
-      .people;
-  }
-
-  /** `keepEntries`: keep their history (shown as "a former member") or delete it. */
-  async removePerson(id: number, keepEntries: boolean): Promise<AdminPerson[]> {
-    const path = `/api/v1/admin/people/${id}?entries=${keepEntries ? 'keep' : 'delete'}`;
-    return (await this.send<{ people: AdminPerson[] }>('DELETE', path, undefined, 'AdminPeopleList')).people;
-  }
-
-  /** Places for the time-zone picker. */
-  async timezones(): Promise<{ id: string; label: string }[]> {
-    return (await this.get<{ zones: { id: string; label: string }[] }>('/api/v1/timezones', 'ZoneList')).zones;
-  }
-
-  async settings(): Promise<Settings> {
-    return this.get('/api/v1/admin/settings', 'Settings');
-  }
-
-  async updateSettings(change: Partial<Settings>): Promise<Settings> {
-    return this.send('PATCH', '/api/v1/admin/settings', change, 'Settings');
-  }
-
-  async storage(): Promise<StorageInfo> {
-    return this.get('/api/v1/admin/storage', 'StorageInfo');
-  }
-
-  /** Backup file names, newest first. */
-  async backups(): Promise<string[]> {
-    return (await this.get<{ names: string[] }>('/api/v1/admin/backups', 'BackupList')).names;
-  }
-
-  async backupNow(): Promise<string[]> {
-    return (await this.send<{ names: string[] }>('POST', '/api/v1/admin/backups', undefined, 'BackupList')).names;
-  }
-
-  /** `doc` is a parsed export file. */
-  async importExport(doc: unknown, dryRun: boolean): Promise<ImportReport> {
-    return this.send('POST', `/api/v1/admin/import${dryRun ? '?dry_run=1' : ''}`, doc, 'ImportReport');
-  }
 }
+

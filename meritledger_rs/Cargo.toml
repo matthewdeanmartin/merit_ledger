@@ -21,7 +21,8 @@ required-features = ["esp32"]
 
 [features]
 default = ["desktop"]
-desktop = []
+# The desktop server reaches HTTPS instances (Brevo, mastodon.social) with rustls.
+desktop = ["miniframework/desktop-tls"]
 esp32 = ["miniframework/esp32", "miniframework/coredump", "miniframework/public-ca", "dep:esp-idf-svc", "dep:embuild", "bundled-web"]
 # Embed the Angular app (run `make web` first).
 bundled-web = []
@@ -36,7 +37,7 @@ gate = []
 
 [dependencies]
 # miniframework lives in the sibling repo C:\github\microcontroller.
-miniframework = { path = "../../microcontroller/miniframework/crates/miniframework", default-features = false, features = ["gzip", "session", "ops"] }
+miniframework = { path = "../../microcontroller/miniframework/crates/miniframework", default-features = false, features = ["gzip", "session", "oauth", "ops", "rate-limit"] }
 log = "0.4"
 sha2 = { version = "0.10", default-features = false }
 pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
@@ -49,6 +50,8 @@ getrandom = "0.2"
 esp-idf-svc = { version = "=0.52.1", optional = true, features = ["experimental"] }
 
 [build-dependencies]
+# Rasterizes fonts/*.ttf into glyph atlases for the screen (build time only).
+fontdue = "0.9"
 embuild = { version = "0.33", optional = true, features = ["espidf"] }
 
 [profile.release]
@@ -57,6 +60,9 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
+[dev-dependencies]
+proptest = "1"
+
 [package.metadata.esp-idf-sys]
 esp_idf_version = "v5.5.3"
 esp_idf_sdkconfig_defaults = ["sdkconfig.defaults"]
@@ -64,3 +70,8 @@ esp_idf_sdkconfig_defaults = ["sdkconfig.defaults"]
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "1.8.2" }
 bindings_header = "src/mdns_bindings.h"
+
+# The board's screen (JD9853), drawn in strips from `src/screen`.
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["components/display"]
+bindings_header = "components/display/include/ml_display.h"

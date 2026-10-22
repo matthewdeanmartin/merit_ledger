@@ -6,7 +6,7 @@ UI := meritledger_ui
 MF := ../microcontroller/miniframework
 CARGO ?= cargo
 
-.PHONY: help test test-rust test-web check run web web-dev run-bundle certs firmware board-check flash update gate legacy-test
+.PHONY: help test test-rust test-web check fuzz run web web-dev run-bundle certs firmware board-check flash update gate legacy-test
 
 help:
 	@printf '%s\n' \
@@ -14,7 +14,7 @@ help:
 	  'Needs the sibling repo C:\github\microcontroller (miniframework).' \
 	  '' \
 	  'make test        Rust tests and a UI type check + unit tests' \
-	  'make check       test + fmt + clippy + production UI build' \
+	  'make check       test + fmt + clippy + production UI build' 	  'make fuzz        property tests, searching hard (CASES=20000 by default)' \
 	  'make run         API on http://127.0.0.1:8089' \
 	  'make web-dev     Angular dev server on http://localhost:4200 (proxies /api to :8089)' \
 	  'make run-bundle  build the UI and serve UI + API from :8089' \
@@ -43,6 +43,14 @@ check: test
 	cd $(API) && $(CARGO) fmt --check && $(CARGO) clippy --all-targets -- -D warnings
 	cd $(API) && $(CARGO) clippy --all-targets --features gate -- -D warnings
 	cd $(UI) && npx ng build
+
+# The property tests (tests/props.rs, src/app/props.test.ts) run in `make
+# test` at a few hundred cases each; this searches much harder. Failures
+# found are saved to meritledger_rs/tests/props.proptest-regressions.
+CASES ?= 20000
+fuzz:
+	cd $(API) && PROPTEST_CASES=$(CASES) $(CARGO) test --release --test props
+	cd $(UI) && FC_RUNS=$(CASES) npx vitest run props
 
 run:
 	cd $(API) && $(CARGO) run

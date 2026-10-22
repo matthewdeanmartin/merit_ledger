@@ -314,7 +314,7 @@ fn chinese(tz: &Tz, options: Options, from: Date, to: Date) -> Vec<Observance> {
             out.push(obs(
                 m.start.add_days(i64::from(d) - 1),
                 "fasting",
-                format!("Fasting day ({}/{})", m.number, d),
+                format!("Fasting day (lunar {}/{})", m.number, d),
             ));
         }
         if m.leap {

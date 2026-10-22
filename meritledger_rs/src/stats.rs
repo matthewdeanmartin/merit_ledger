@@ -37,7 +37,8 @@ impl Tally {
     }
 
     /// The merit day as a viewer may see it, or `None` for no visible merit.
-    pub fn as_day(&self, own: bool) -> Option<Day> {
+    /// Outsiders (guests, visitors) don't get the generic day counts.
+    pub fn as_day(&self, own: bool, outsider: bool) -> Option<Day> {
         let day = if own {
             Day {
                 entries: self.own_entries,
@@ -45,7 +46,7 @@ impl Tally {
             }
         } else {
             Day {
-                entries: self.open_entries + self.day_only,
+                entries: self.open_entries + if outsider { 0 } else { self.day_only },
                 minutes: self.open_minutes,
             }
         };
@@ -280,7 +281,7 @@ impl State {
         // what aged out without a card).
         for (&(_, d), tally) in self.history.range((person, i64::MIN)..=(person, i64::MAX)) {
             if d < self.window_start {
-                if let Some(day) = tally.as_day(own) {
+                if let Some(day) = tally.as_day(own, viewer.outsider) {
                     days.insert(d, day);
                 }
             }
@@ -452,6 +453,7 @@ mod tests {
                 Viewer {
                     id: dad,
                     admin: false,
+                    outsider: false,
                 },
                 kid,
                 Some(NOON),
@@ -471,6 +473,7 @@ mod tests {
                 Viewer {
                     id: kid,
                     admin: false,
+                    outsider: false,
                 },
                 kid,
                 Some(NOON),
@@ -492,6 +495,7 @@ mod tests {
                 Viewer {
                     id: dad,
                     admin: false,
+                    outsider: false,
                 },
                 kid,
                 Some(NOON),
@@ -503,6 +507,7 @@ mod tests {
                 Viewer {
                     id: kid,
                     admin: false,
+                    outsider: false,
                 },
                 kid,
                 Some(NOON),
@@ -520,6 +525,7 @@ mod tests {
                 Viewer {
                     id: 0,
                     admin: false,
+                    outsider: false,
                 },
                 kid,
                 Some(NOON),
@@ -539,6 +545,7 @@ mod tests {
         let anyone = Viewer {
             id: 0,
             admin: false,
+            outsider: false,
         };
         let first = s.feed(anyone, 0, 2);
         let names: Vec<_> = first.entries.iter().map(|e| e.kind_name.as_str()).collect();
@@ -610,18 +617,22 @@ mod tests {
                 Viewer {
                     id: kid,
                     admin: false,
+                    outsider: false,
                 },
                 Viewer {
                     id: dad,
                     admin: false,
+                    outsider: false,
                 },
                 Viewer {
                     id: dad,
                     admin: true,
+                    outsider: false,
                 },
                 Viewer {
                     id: 0,
                     admin: false,
+                    outsider: false,
                 },
             ];
             let before: Vec<_> = viewers
@@ -676,6 +687,7 @@ mod tests {
                 Viewer {
                     id: dad,
                     admin: true,
+                    outsider: false,
                 },
                 &s.entries[0],
             )

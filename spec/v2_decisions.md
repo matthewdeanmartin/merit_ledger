@@ -35,6 +35,16 @@ the work [../sprints/](../sprints/README.md).
 ## People and privacy
 
 - The household is the owner and their kids. **House guests can join**, but it's hypothetical.
+- **Three ways in** (owner, 2026-10-21):
+  - **PIN account:** anyone may make one while sign-up is open. They're a member, and an admin
+    removes any that should have been guests.
+  - **Guest:** a required name and no PIN. The account lives in that browser's cookie, so two
+    guests get two accounts. There are at most 8 at a time. A guest unused for 90 days is deleted
+    with everything they logged, and "End visit" deletes it at once.
+  - **No account:** the dharma side reads without signing in (practices, texts, precepts, the
+    calendar, the timer, book search, the house). Anything that writes needs an account.
+- **Guests and visitors see only public things:** public entries and vows, never "generic"
+  household detail. Members see generic items as before.
 - The house trusts itself. Anyone can record a practice for anyone from the board's touch menu
   or the website. Auth friction on the board isn't wanted.
 - **Data is public by default.** Each person has a profile page on the board.

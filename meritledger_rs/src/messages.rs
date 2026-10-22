@@ -112,7 +112,14 @@ message! {
         6 sessions: u32,
         7 created: u64,
         /// Their own calendar system, "" = the household's.
-        8 calendar: String,
+        8 calendar: String,        /// Their Mastodon handle, for DMs from the household bot.
+        9 mastodon: String,
+        10 dm_off: bool,
+        11 email_off: bool,
+        /// The linked Mastodon account (sign-in and publishing), or "".
+        12 linked: String,
+        13 auto_publish: bool,
+        14 publish_visibility: String,
     }
 }
 
@@ -134,6 +141,14 @@ message! {
 }
 
 message! {
+    /// "I'm visiting": a guest needs only a name (no PIN). The account
+    /// lives in this browser's cookie.
+    pub struct VisitorInput {
+        1 display_name: String,
+    }
+}
+
+message! {
     /// `POST /api/v1/auth/pin`: tap your name, enter your PIN.
     pub struct PinSignIn {
         1 person: u32,
@@ -147,7 +162,11 @@ message! {
         1 display_name: Option<String>,
         2 email: Option<String>,
         /// "" = follow the household.
-        3 calendar: Option<String>,
+        3 calendar: Option<String>,        4 mastodon: Option<String>,
+        5 dm_off: Option<bool>,
+        6 email_off: Option<bool>,
+        7 auto_publish: Option<bool>,
+        8 publish_visibility: Option<String>,
     }
 }
 
@@ -255,6 +274,24 @@ message! {
         9 pinned: Vec<String>,
         /// Their own calendar system; empty = the household's.
         10 calendar: String,
+        /// Their Mastodon handle (`@matt@mastomini.local`): the bot DMs it.
+        11 mastodon: String,
+        /// No DMs from the household bot.
+        12 dm_off: bool,
+        /// No reminder emails.
+        13 email_off: bool,
+        /// Their notification ring, newest first (Sprint 10, `notify.rs`).
+        14 notifications: Vec<StoredNotification>,
+        15 reminders: Vec<StoredReminder>,
+        /// A linked Mastodon account (Sprint 11): its sign-in provider and
+        /// account id, for "Sign in with Mastodon". Its token is in the Kv.
+        16 link_provider: String,
+        17 link_subject: String,
+        18 link_handle: String,
+        /// Publish content to Mastodon as soon as it's recorded.
+        19 auto_publish: bool,
+        /// `public`, `unlisted` or `private` ("" = unlisted).
+        20 publish_visibility: String,
     }
 }
 
@@ -317,6 +354,24 @@ message! {
         /// Built practices (Sprint 8).
         28 practices: Vec<StoredPracticeDoc>,
         29 next_practice: u32,
+        /// Events and calls to service (Sprint 10).
+        30 events: Vec<StoredEvent>,
+        31 next_event: u32,
+        32 next_notification: u32,
+        33 calls: Vec<StoredCall>,
+        /// The household-local day observance notices last went out.
+        34 observance_day: String,
+        35 next_reminder: u32,
+        /// The board's screen (`screen/`): turned 180 degrees; pixels sent
+        /// in native byte order instead of swapped; backlight % (0 = 40).
+        36 screen_flip: bool,
+        37 screen_native: bool,
+        38 screen_brightness: u32,
+        /// Reading lists (Sprint 12, `reading.rs`).
+        39 readings: Vec<StoredReading>,
+        40 next_reading: u32,
+        41 touch_flip_x: bool,
+        42 touch_flip_y: bool,
     }
 }
 
@@ -454,6 +509,8 @@ message! {
         13 deleted: bool,
         /// `EntryInput::client_id`, kept so a retried POST is recognized.
         14 client_id: String,
+        /// A reading session's book: its reading-list item (Sprint 12).
+        15 reading: u32,
     }
 }
 
@@ -634,6 +691,7 @@ message! {
         /// Household texts, with their bodies.
         12 texts: Vec<StoredText>,
         13 practices: Vec<StoredPracticeDoc>,
+        14 readings: Vec<StoredReading>,
     }
 }
 
@@ -655,6 +713,7 @@ message! {
         11 precepts_added: u32,
         12 texts_added: u32,
         13 practices_added: u32,
+        14 readings_added: u32,
     }
 }
 
@@ -1138,6 +1197,9 @@ message! {
         7 logs_as: String,
         /// What to read, an art prompt, or free text.
         8 note: String,
+        /// `read`: a book on someone's reading list (`r12`) or an Open
+        /// Library work (`OL45804W`), Sprint 12.
+        9 book: String,
     }
 }
 
@@ -1190,5 +1252,502 @@ message! {
     pub struct PracticeDone {
         /// "" = today.
         1 date: String,
+    }
+}
+
+message! {
+    /// One line in someone's bell. While unread, more of the same kind on
+    /// the same subject bump `count` instead of adding a line.
+    pub struct StoredNotification {
+        1 id: u32,
+        /// `call`, `invite`, `rsvp`, `changed`, `cancelled`, `reminder`,
+        /// `observance`, `rejoice`.
+        2 kind: String,
+        /// What it's about: an event or entry id (0 = none).
+        3 subject: u32,
+        4 count: u32,
+        /// Who did it (0 = the board).
+        5 actor: u32,
+        6 created: u64,
+        7 read: bool,
+        /// The call's message, the observance's name, the reminder's text.
+        8 text: String,
+    }
+}
+
+message! {
+    /// "Sit at 07:00", or "the evening before uposatha at 19:00".
+    pub struct StoredReminder {
+        1 id: u32,
+        /// `daily` or `observance`.
+        2 kind: String,
+        /// Household-local `HH:MM`.
+        3 time: String,
+        /// `daily`: weekdays, bit 0 = Monday ... bit 6 = Sunday; 0 = every day.
+        4 days: u32,
+        /// `observance`: how many days before (0 = on the day).
+        5 before: u32,
+        /// `observance`: `any`, `uposatha`, `fasting_day`, `festival` or `feast`.
+        6 observances: String,
+        7 text: String,
+        /// UTC seconds of the last time it was due (fired or skipped).
+        8 last_due: u64,
+        9 off: bool,
+    }
+}
+
+message! {
+    pub struct StoredRsvp {
+        1 person: u32,
+        /// `yes`, `maybe` or `no`.
+        2 answer: String,
+        /// "Dumplings" (a potluck).
+        3 bringing: String,
+        4 at: u64,
+    }
+}
+
+message! {
+    /// Someone outside the household, invited by a link with a token.
+    pub struct StoredGuest {
+        1 id: u32,
+        2 name: String,
+        3 token: String,
+        /// "" until they answer.
+        4 answer: String,
+        5 bringing: String,
+        6 at: u64,
+    }
+}
+
+message! {
+    pub struct StoredEvent {
+        1 id: u32,
+        2 host: u32,
+        3 title: String,
+        /// UTC seconds.
+        4 start: u64,
+        /// 0 = no set end.
+        5 end: u64,
+        6 place: String,
+        7 notes: String,
+        8 invitees: Vec<u32>,
+        9 rsvps: Vec<StoredRsvp>,
+        10 guests: Vec<StoredGuest>,
+        11 rev: u32,
+        12 created: u64,
+        13 cancelled: bool,
+        /// The "starting soon" reminder went out.
+        14 reminded: bool,
+        15 next_guest: u32,
+    }
+}
+
+message! {
+    /// A call to service ("dinner's ready, come and chant").
+    pub struct StoredCall {
+        1 id: u32,
+        2 by: u32,
+        3 message: String,
+        /// Free text: "at 7", "now".
+        4 when: String,
+        5 created: u64,
+        /// Empty = everyone.
+        6 to: Vec<u32>,
+    }
+}
+
+message! {
+    pub struct NotificationView {
+        1 id: u32,
+        2 kind: String,
+        /// "Dad invited you to Uposatha dinner".
+        3 text: String,
+        /// A page in the UI ("/events/3"), or "".
+        4 link: String,
+        5 count: u32,
+        6 created: u64,
+        7 read: bool,
+    }
+}
+
+message! {
+    /// `GET /api/v1/me/notifications`.
+    pub struct NotificationList {
+        1 notifications: Vec<NotificationView>,
+        2 unread: u32,
+    }
+}
+
+message! {
+    /// `GET /api/v1/me/summary`: what the bell polls (cheap).
+    pub struct Summary {
+        1 unread: u32,
+        /// The newest notification's id.
+        2 latest: u32,
+    }
+}
+
+message! {
+    /// `POST /api/v1/me/notifications/read`.
+    pub struct ReadInput {
+        /// Mark everything up to this id read (0 = all).
+        1 up_to: u32,
+    }
+}
+
+message! {
+    pub struct ReminderInput {
+        1 kind: String,
+        2 time: String,
+        3 days: u32,
+        4 before: u32,
+        5 observances: String,
+        6 text: String,
+        7 off: bool,
+    }
+}
+
+message! {
+    pub struct ReminderList {
+        1 reminders: Vec<StoredReminder>,
+        /// Where reminders go ("matt@example.com", or why nowhere).
+        2 delivery: String,
+    }
+}
+
+message! {
+    pub struct EventPerson {
+        1 person: u32,
+        2 name: String,
+        /// "" = no answer yet.
+        3 answer: String,
+        4 bringing: String,
+    }
+}
+
+message! {
+    pub struct GuestView {
+        1 id: u32,
+        2 name: String,
+        3 answer: String,
+        4 bringing: String,
+        /// The RSVP link: only for the host.
+        5 link: String,
+    }
+}
+
+message! {
+    pub struct EventView {
+        1 id: u32,
+        2 host: u32,
+        3 host_name: String,
+        4 title: String,
+        5 start: u64,
+        6 end: u64,
+        7 place: String,
+        8 notes: String,
+        9 people: Vec<EventPerson>,
+        10 guests: Vec<GuestView>,
+        11 my_answer: String,
+        12 my_bringing: String,
+        13 can_edit: bool,
+        14 cancelled: bool,
+        15 rev: u32,
+        /// `/cal/event/<id>.ics`.
+        16 ics: String,
+        /// Answering as a guest (token link).
+        17 guest: u32,
+    }
+}
+
+message! {
+    pub struct EventList {
+        1 events: Vec<EventView>,
+    }
+}
+
+message! {
+    pub struct EventInput {
+        1 title: String,
+        2 start: u64,
+        3 end: u64,
+        4 place: String,
+        5 notes: String,
+        6 invitees: Vec<u32>,
+        7 rev: u32,
+    }
+}
+
+message! {
+    /// `POST /api/v1/events/{id}/rsvp` (`token` for guests without an account).
+    pub struct RsvpInput {
+        1 answer: String,
+        2 bringing: String,
+        3 token: String,
+    }
+}
+
+message! {
+    pub struct GuestInput {
+        1 name: String,
+    }
+}
+
+message! {
+    /// `POST /api/v1/call`.
+    pub struct CallInput {
+        1 message: String,
+        2 when: String,
+        /// Empty = everyone.
+        3 to: Vec<u32>,
+    }
+}
+
+message! {
+    pub struct CallView {
+        1 id: u32,
+        2 by: u32,
+        3 by_name: String,
+        4 message: String,
+        5 when: String,
+        6 created: u64,
+    }
+}
+
+message! {
+    /// `GET /api/v1/calls`: recent calls to service.
+    pub struct CallList {
+        1 calls: Vec<CallView>,
+    }
+}
+
+message! {
+    /// One queued or sent DM or email (admin view).
+    pub struct OutboxEntry {
+        1 id: u32,
+        /// `dm` or `email`.
+        2 kind: String,
+        3 text: String,
+        /// `queued`, `sent` or `failed`.
+        4 state: String,
+        5 attempts: u32,
+        6 error: String,
+        7 created: u64,
+        8 next_at: u64,
+    }
+}
+
+message! {
+    /// `GET /api/v1/admin/delivery`.
+    pub struct DeliveryView {
+        1 bot_handle: String,
+        2 bot_instance: String,
+        /// "", "working", "ready: ...", "failed: ...".
+        3 bot_setup: String,
+        4 bot_error: String,
+        5 mail_sender: String,
+        6 mail_setup: String,
+        7 mail_error: String,
+        8 sent_today: u32,
+        9 daily_limit: u32,
+        10 mail_built_in: bool,
+        11 jobs: Vec<OutboxEntry>,
+    }
+}
+
+message! {
+    /// `POST /api/v1/admin/bot`: create a bot on mastomini (admin login,
+    /// used once and never stored), or use an existing account's token.
+    pub struct BotSetup {
+        1 instance: String,
+        2 token: String,
+        3 admin: String,
+        4 password: String,
+        5 username: String,
+        6 display_name: String,
+    }
+}
+
+message! {
+    /// `POST /api/v1/admin/mail`.
+    pub struct MailSetupInput {
+        1 api_key: String,
+        2 sender_email: String,
+    }
+}
+
+message! {
+    /// `POST /api/v1/admin/delivery/test`: a test to the admin themselves.
+    pub struct DeliveryTest {
+        /// `dm` or `email`.
+        1 kind: String,
+    }
+}
+
+message! {
+    /// `GET|PUT /api/v1/admin/screen`: how the board's screen is driven.
+    pub struct ScreenSettings {
+        /// Turned 180 degrees.
+        1 flip: bool,
+        /// Send pixels in native byte order (try it if colours look wrong).
+        2 native: bool,
+        /// Backlight, 5 to 60 %.
+        3 brightness: u32,
+        /// Taps land mirrored left-right / up-down? Flip them.
+        4 touch_flip_x: bool,
+        5 touch_flip_y: bool,
+        /// The last touch the board saw (raw, then on screen): for setting
+        /// the flips. Read-only.
+        6 last_touch: String,
+    }
+}
+
+message! {
+    /// A Mastodon instance people can sign in with.
+    pub struct ProviderView {
+        /// `mastomini`
+        1 id: String,
+        2 name: String,
+        /// `https://mastomini.local`
+        3 base: String,
+    }
+}
+
+message! {
+    /// `GET /api/v1/auth/providers`.
+    pub struct ProviderList {
+        1 providers: Vec<ProviderView>,
+    }
+}
+
+message! {
+    /// `POST /api/v1/auth/oauth/start`.
+    pub struct OAuthStart {
+        1 provider: String,
+        /// Link the signed-in person (and keep a token for publishing),
+        /// instead of signing in.
+        2 link: bool,
+    }
+}
+
+message! {
+    pub struct OAuthTicket {
+        1 ticket: String,
+    }
+}
+
+message! {
+    /// `GET /api/v1/auth/oauth/{ticket}`.
+    pub struct OAuthStatus {
+        /// `waiting`, `redirect`, `done` or `failed`.
+        1 state: String,
+        2 location: String,
+        3 message: String,
+        /// For `done`: `signed_in` or `linked`.
+        4 result: String,
+    }
+}
+
+message! {
+    /// `POST /api/v1/entries/{id}/publish`, `/api/v1/posts/{id}/publish`.
+    pub struct PublishResult {
+        /// `queued`, `already` (out, or on its way).
+        1 state: String,
+        /// As whom: `@matt@mastomini.local`, or the bot's handle.
+        2 as_whom: String,
+    }
+}
+
+message! {
+    /// A book on someone's reading list.
+    pub struct StoredReading {
+        1 id: u32,
+        2 person: u32,
+        /// Open Library work key, `OL45804W` ("" for a book typed in).
+        3 work: String,
+        4 title: String,
+        5 author: String,
+        /// Open Library cover id (0 = none).
+        6 cover: u32,
+        /// `want`, `reading` or `done`.
+        7 status: String,
+        /// The page they're on, and the book's pages (0 = unknown).
+        8 page: u32,
+        9 pages: u32,
+        10 started: String,
+        11 finished: String,
+        12 updated: u64,
+        /// `public` or `private`.
+        13 visibility: String,
+        14 rev: u32,
+        15 year: u32,
+    }
+}
+
+message! {
+    pub struct ReadingView {
+        1 id: u32,
+        2 person: u32,
+        3 person_name: String,
+        4 work: String,
+        5 title: String,
+        6 author: String,
+        7 cover: u32,
+        8 status: String,
+        9 page: u32,
+        10 pages: u32,
+        11 started: String,
+        12 finished: String,
+        13 visibility: String,
+        14 rev: u32,
+        15 year: u32,
+        /// Minutes of reading logged on this book.
+        16 minutes: u32,
+        17 can_edit: bool,
+    }
+}
+
+message! {
+    /// `GET /api/v1/reading[?person=]`, `GET /api/v1/shelf`.
+    pub struct ReadingList {
+        1 books: Vec<ReadingView>,
+    }
+}
+
+message! {
+    /// `POST /api/v1/reading`: a book from an Open Library search (or typed in).
+    pub struct ReadingInput {
+        1 work: String,
+        2 title: String,
+        3 author: String,
+        4 cover: u32,
+        5 pages: u32,
+        6 year: u32,
+        /// "" = `want`.
+        7 status: String,
+        /// "" = public.
+        8 visibility: String,
+    }
+}
+
+message! {
+    /// `PATCH /api/v1/reading/{id}`.
+    pub struct ReadingUpdate {
+        1 rev: u32,
+        2 status: Option<String>,
+        3 page: Option<u32>,
+        4 pages: Option<u32>,
+        5 visibility: Option<String>,
+    }
+}
+
+message! {
+    /// `POST /api/v1/reading/{id}/log`: a reading session.
+    pub struct ReadingLog {
+        1 minutes: u32,
+        /// The page they got to (0 = not given).
+        2 page: u32,
+        3 note: String,
     }
 }

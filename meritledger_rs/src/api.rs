@@ -66,6 +66,24 @@ struct Inner {
 }
 
 const BACKUP_DIR: &str = "ml/backup";
+
+/// The household's instance (its certificate is the household CA's) and
+/// the big public one.
+pub fn default_instances() -> Vec<miniframework::oauth::Provider> {
+    use miniframework::oauth::{Provider, Trust};
+    vec![
+        Provider {
+            id: "mastomini".into(),
+            base: "https://mastomini.local".into(),
+            trust: Trust::Household,
+        },
+        Provider {
+            id: "mastodon.social".into(),
+            base: "https://mastodon.social".into(),
+            trust: Trust::Public,
+        },
+    ]
+}
 /// Vow post bodies, `<id>.md`.
 const POSTS_DIR: &str = "ml/posts";
 /// Household text bodies, `<id>.md`.
@@ -111,6 +129,7 @@ impl Caller {
         Viewer {
             id: self.id,
             admin: self.admin,
+            outsider: self.guest,
         }
     }
 }
@@ -119,6 +138,8 @@ impl Caller {
 /// firmware and the tests.
 pub struct App {
     inner: Mutex<Inner>,
+    /// Token buckets for the public and heavy routes (`metered`).
+    limiter: miniframework::rate_limit::Limiter,
     /// Build fingerprint shown in the UI footer (`git rev-parse --short`,
     /// `+` when the tree was dirty).
     pub build: &'static str,
@@ -127,6 +148,15 @@ pub struct App {
     pub dev_origins: Vec<String>,
     /// Compiled-in code that first-run setup needs, if any.
     pub setup_code: Option<&'static str>,
+    /// Sends DMs and email (Sprint 10); None sends nothing.
+    pub outbox: Option<Arc<crate::outbound::Outbox>>,
+    /// The board's address, for links in DMs and email.
+    pub origin: String,
+    /// "Sign in with Mastodon" and linking (Sprint 11); None on builds
+    /// without it. Its network steps run on the outbox's worker.
+    pub oauth: Option<Arc<miniframework::oauth::OAuth>>,
+    /// The instances people can sign in with.
+    pub instances: Vec<miniframework::oauth::Provider>,
     #[cfg(feature = "gate")]
     pub gate: Arc<crate::gate::Gate>,
 }
@@ -202,6 +232,11 @@ impl App {
             sd,
             dev_origins: Vec::new(),
             setup_code: None,
+            outbox: None,
+            origin: "https://meritledger.local".into(),
+            oauth: None,
+            instances: default_instances(),
+            limiter: miniframework::rate_limit::Limiter::new(METER).map_err(|e| e.to_string())?,
             #[cfg(feature = "gate")]
             gate: Arc::new(crate::gate::Gate::default()),
         })
@@ -359,6 +394,7 @@ impl App {
         let history = inner.state.history.clone();
         let (journaled, window_start) = (inner.state.journaled, inner.state.window_start);
         let result = f(&mut inner).and_then(|r| Self::save(&mut inner, &entries).map(|_| r));
+        let deliveries = std::mem::take(&mut inner.state.deliveries);
         if result.is_err() {
             let limits = inner.state.limits.clone();
             let mut state = State::from_stored(backup, limits);
@@ -368,7 +404,11 @@ impl App {
             state.window_start = window_start;
             inner.state = state;
             inner.pending.clear();
+            return result;
         }
+        self.follow_publishing(&inner.state, &entries, &backup.posts, &backup.vows);
+        drop(inner);
+        self.deliver(deliveries);
         result
     }
 
@@ -386,6 +426,9 @@ impl App {
             inner.last_flush = now;
             let mut commit = inner.state.sessions.dirty() || inner.snapshot_dirty;
             inner.state.sessions.prune(wall());
+            if let Some(now) = wall() {
+                commit |= inner.state.purge_idle_guests(now);
+            }
             if let Some(today) = inner.state.today(wall()) {
                 commit |= inner.state.roll_window(today);
             }
@@ -397,6 +440,9 @@ impl App {
         }
         self.backup_if_due();
         self.warm_calendars();
+        if let Some(now) = wall() {
+            self.run_schedules_at(now);
+        }
     }
 
     /// Computes last, this and next year's calendars for every system in
@@ -569,12 +615,25 @@ impl App {
             .sessions
             .check(req, wall())
             .ok_or_else(|| ApiError::unauthorized("Sign in first"))?;
-        match inner.state.person(id) {
-            Some(p) if !p.disabled && !p.pin.is_empty() => Ok(Caller {
-                id,
-                admin: p.role == state::ADMIN,
-                guest: p.role == state::GUEST,
-            }),
+        let now = wall();
+        match inner.state.person_mut(id) {
+            // Guests have no PIN: their session is their account.
+            Ok(p) if !p.disabled && (!p.pin.is_empty() || p.role == state::GUEST) => {
+                let caller = Caller {
+                    id,
+                    admin: p.role == state::ADMIN,
+                    guest: p.role == state::GUEST,
+                };
+                // Seen today (for the 90-day guest clean-up), at most once a
+                // day, saved with the next housekeeping commit.
+                if let Some(now) = now {
+                    if now.saturating_sub(p.last_seen) >= 86_400 {
+                        p.last_seen = now;
+                        inner.snapshot_dirty = true;
+                    }
+                }
+                Ok(caller)
+            }
             _ => {
                 inner.state.sessions.revoke(req);
                 Err(ApiError::unauthorized("Sign in first"))
@@ -608,6 +667,16 @@ impl App {
             sessions: state.sessions.count(id) as u32,
             created: p.created,
             calendar: p.calendar.clone(),
+            mastodon: p.mastodon.clone(),
+            dm_off: p.dm_off,
+            email_off: p.email_off,
+            linked: p.link_handle.clone(),
+            auto_publish: p.auto_publish,
+            publish_visibility: if p.publish_visibility.is_empty() {
+                "unlisted".into()
+            } else {
+                p.publish_visibility.clone()
+            },
         })
     }
 
@@ -743,13 +812,7 @@ impl App {
 
     /// Who is looking, signed in or not.
     fn viewer(&self, req: &Request<'_>) -> Viewer {
-        self.caller(req).map_or(
-            Viewer {
-                id: 0,
-                admin: false,
-            },
-            |c| c.viewer(),
-        )
+        self.caller(req).map_or(Viewer::anonymous(), |c| c.viewer())
     }
 
     /// Records a practice from the board's own touch menu (Sprint 13):
@@ -761,6 +824,67 @@ impl App {
             ..Default::default()
         };
         self.mutate(|inner| inner.state.record(Actor::Board, &input, wall()))
+    }
+
+    /// Who the board's touch menu can record for: everyone active, by name.
+    pub fn board_people(&self) -> Vec<crate::screen::ui::Person> {
+        let mut people: Vec<crate::screen::ui::Person> = self
+            .lock()
+            .state
+            .people
+            .iter()
+            .filter(|p| !p.disabled)
+            .map(|p| crate::screen::ui::Person {
+                id: p.id,
+                name: p.display_name.clone(),
+            })
+            .collect();
+        people.sort_by_key(|p| p.name.to_lowercase());
+        people
+    }
+
+    /// The touch menu's undo: only an entry the board itself recorded in
+    /// the last minute.
+    pub fn undo_from_board(&self, entry: u32) -> Result<(), ApiError> {
+        let now = wall().unwrap_or(0);
+        self.mutate(|inner| {
+            let fresh = inner.state.entries.iter().any(|e| {
+                e.id == entry && e.recorded_by == 0 && now.saturating_sub(e.created) <= 60
+            });
+            if !fresh {
+                return Err(ApiError::new(409, "too_late", "Too late to undo that here"));
+            }
+            // Checked above; `delete_entry` refuses id 0 as a viewer, rightly.
+            inner.state.entries.retain(|e| e.id != entry);
+            Ok(())
+        })
+    }
+
+    /// The touch menu's call to practice: everyone, from "the board".
+    pub fn call_from_board(&self) -> Result<usize, ApiError> {
+        let now = wall().ok_or_else(crate::ledger::clock_not_set)?;
+        let input = CallInput {
+            message: String::new(),
+            when: "now".into(),
+            to: Vec::new(),
+        };
+        self.mutate(|inner| inner.state.call_to_service(Actor::Board, &input, now))
+    }
+
+    /// The board saw a touch (for calibrating the flips on the admin page).
+    pub fn note_touch(&self, raw: (i32, i32), on_screen: (i32, i32)) {
+        self.lock().state.screen.last_touch = format!(
+            "raw {},{} → screen {},{}",
+            raw.0, raw.1, on_screen.0, on_screen.1
+        );
+    }
+
+    /// A kind's display name (the touch menu's "Recorded" message).
+    pub fn kind_name(&self, key: &str) -> String {
+        self.lock()
+            .state
+            .kind(key)
+            .map_or_else(|| key.to_string(), |k| k.name)
     }
 
     /// One `{id}` path segment after `prefix`.
@@ -990,12 +1114,14 @@ impl App {
     fn route_practice(&self, req: &Request<'_>, reply: &mut Reply<'_>) -> Result<bool, ApiError> {
         let path = req.path;
         match (req.method, path) {
+            // Open to visitors (owner, 2026-10-21): the dharma side of the
+            // board reads without an account; writing needs one.
             ("GET", "/api/v1/kinds") => {
-                let c = self.caller(req)?;
+                let id = self.viewer(req).id;
                 reply.wire(
                     req,
                     &KindList {
-                        kinds: self.lock().state.kinds_for(c.id),
+                        kinds: self.lock().state.kinds_for(id),
                     },
                 );
             }
@@ -1068,8 +1194,8 @@ impl App {
                 reply.wire(req, &view);
             }
             ("GET", "/api/v1/timers") => {
-                let c = self.caller(req)?;
-                let timers = self.lock().state.timers_for(c.id);
+                let id = self.viewer(req).id;
+                let timers = self.lock().state.timers_for(id);
                 reply.wire(req, &TimerList { timers });
             }
             ("POST", "/api/v1/timers") => {
@@ -1646,8 +1772,928 @@ impl App {
         Ok(true)
     }
 
+    /// Hands new notifications' DMs and emails to the outbox (after the
+    /// change that made them was saved).
+    fn deliver(&self, deliveries: Vec<crate::notify::Delivery>) {
+        if deliveries.is_empty() {
+            return;
+        }
+        let Some(outbox) = &self.outbox else {
+            return;
+        };
+        let now = wall().unwrap_or(0);
+        for d in &deliveries {
+            outbox.send(d, &self.origin, now);
+        }
+    }
+
+    /// Reminders, the morning's observance notices and "starting soon",
+    /// for `now` (UTC seconds). Housekeeping calls it once a minute.
+    pub fn run_schedules_at(&self, now: u64) {
+        let deliveries = {
+            let mut inner = self.lock();
+            let mut changed = inner.state.run_reminders(now);
+            changed |= inner.state.run_observance_notices(now);
+            changed |= inner.state.run_event_reminders(now);
+            if changed {
+                if let Err(e) = Self::commit(&mut inner) {
+                    log::warn!("schedules commit: {}", e.message);
+                }
+            }
+            std::mem::take(&mut inner.state.deliveries)
+        };
+        self.deliver(deliveries);
+    }
+
+    fn reminder_list(state: &State, id: u32) -> ReminderList {
+        let p = state.person(id);
+        let delivery = match p {
+            Some(p) if p.email.is_empty() => {
+                "Add your email address below to get reminders by email.".into()
+            }
+            Some(p) if p.email_off => {
+                "Reminder emails are off; they still show in your bell.".into()
+            }
+            Some(p) => format!(
+                "Reminders are emailed to {} and show in your bell.",
+                p.email
+            ),
+            None => String::new(),
+        };
+        ReminderList {
+            reminders: p.map(|p| p.reminders.clone()).unwrap_or_default(),
+            delivery,
+        }
+    }
+
+    /// Notifications, reminders, calls to service, events, and the admin's
+    /// delivery settings (Sprint 10).
+    fn route_notify(&self, req: &Request<'_>, reply: &mut Reply<'_>) -> Result<bool, ApiError> {
+        let path = req.path;
+        let not_found = |what: &str| ApiError::not_found(format!("No such {what}"));
+        let now = || wall().unwrap_or(0);
+        // Anything that stamps a time waits for the clock (Sprint 14 audit):
+        // a call or an RSVP from 1970 would sort and expire wrongly.
+        let stamp = || wall().ok_or_else(crate::ledger::clock_not_set);
+        match (req.method, path) {
+            ("GET", "/api/v1/me/summary") => {
+                let c = self.caller(req)?;
+                let (unread, latest) = self.lock().state.summary(c.id);
+                reply.wire(req, &Summary { unread, latest });
+            }
+            ("GET", "/api/v1/me/notifications") => {
+                let c = self.caller(req)?;
+                let (notifications, unread) = self.lock().state.notifications_of(c.id);
+                reply.wire(
+                    req,
+                    &NotificationList {
+                        notifications,
+                        unread,
+                    },
+                );
+            }
+            ("POST", "/api/v1/me/notifications/read") => {
+                let c = self.caller(req)?;
+                let body: ReadInput = req.decode()?;
+                let list = self.mutate(|inner| {
+                    inner.state.mark_read(c.id, body.up_to);
+                    let (notifications, unread) = inner.state.notifications_of(c.id);
+                    Ok(NotificationList {
+                        notifications,
+                        unread,
+                    })
+                })?;
+                reply.wire(req, &list);
+            }
+            ("GET", "/api/v1/me/reminders") => {
+                let c = self.caller(req)?;
+                let list = Self::reminder_list(&self.lock().state, c.id);
+                reply.wire(req, &list);
+            }
+            ("POST", "/api/v1/me/reminders") => {
+                let c = self.caller(req)?;
+                let body: ReminderInput = req.decode()?;
+                let list = self.mutate(|inner| {
+                    inner.state.add_reminder(c.id, &body, stamp()?)?;
+                    Ok(Self::reminder_list(&inner.state, c.id))
+                })?;
+                reply.wire_status(req, 201, &list);
+            }
+            ("PUT" | "DELETE", _) if path.starts_with("/api/v1/me/reminders/") => {
+                let c = self.caller(req)?;
+                let id: u32 = Self::id_after(req, "/api/v1/me/reminders")
+                    .and_then(|id| id.parse().ok())
+                    .ok_or_else(|| not_found("reminder"))?;
+                let list = if req.method == "PUT" {
+                    let body: ReminderInput = req.decode()?;
+                    self.mutate(|inner| {
+                        inner.state.update_reminder(c.id, id, &body, stamp()?)?;
+                        Ok(Self::reminder_list(&inner.state, c.id))
+                    })?
+                } else {
+                    self.mutate(|inner| {
+                        inner.state.delete_reminder(c.id, id)?;
+                        Ok(Self::reminder_list(&inner.state, c.id))
+                    })?
+                };
+                reply.wire(req, &list);
+            }
+            ("GET", "/api/v1/calls") => {
+                self.caller(req)?;
+                let calls = self.lock().state.recent_calls(now());
+                reply.wire(req, &CallList { calls });
+            }
+            ("POST", "/api/v1/call") => {
+                let c = self.caller(req)?;
+                let body: CallInput = req.decode()?;
+                let room = self.outbox.as_ref().map(|o| o.room());
+                let calls = self.mutate(|inner| {
+                    inner.state.call_to_service(c.actor(), &body, stamp()?)?;
+                    if let Some(room) = room {
+                        if inner.state.deliveries.len() > room {
+                            return Err(ApiError::new(
+                                409,
+                                "full",
+                                "The board's outbox is full of messages it can't send yet; try again later",
+                            ));
+                        }
+                    }
+                    Ok(inner.state.recent_calls(now()))
+                })?;
+                reply.wire_status(req, 201, &CallList { calls });
+            }
+            ("GET", "/api/v1/events") => {
+                let c = self.caller(req)?;
+                let since = req
+                    .param_num::<u64>("since")?
+                    .unwrap_or_else(|| now().saturating_sub(86_400));
+                let events = self.lock().state.events_for(c.viewer(), since);
+                reply.wire(req, &EventList { events });
+            }
+            ("POST", "/api/v1/events") => {
+                let c = self.caller(req)?;
+                let body: EventInput = req.decode()?;
+                let view = self.mutate(|inner| {
+                    let id = inner.state.add_event(c.actor(), &body, stamp()?)?;
+                    inner.state.event(c.viewer(), id)
+                })?;
+                reply.wire_status(req, 201, &view);
+            }
+            (_, _) if path.starts_with("/api/v1/events/") => {
+                let parts = req.rest("/api/v1/events").unwrap_or_default();
+                let id: u32 = parts
+                    .first()
+                    .and_then(|id| id.parse().ok())
+                    .ok_or_else(|| not_found("event"))?;
+                match (req.method, &parts[1..]) {
+                    // Guests without an account: the token is the key.
+                    ("GET", ["guest"]) => {
+                        let token = req.param("t").unwrap_or_default();
+                        let view = self.lock().state.event_for_guest(id, &token)?;
+                        reply.wire(req, &view);
+                    }
+                    ("POST", ["guest-rsvp"]) => {
+                        let body: RsvpInput = req.decode()?;
+                        let view = self.mutate(|inner| {
+                            inner.state.guest_rsvp(id, &body, stamp()?)?;
+                            inner.state.event_for_guest(id, &body.token)
+                        })?;
+                        reply.wire(req, &view);
+                    }
+                    ("GET", []) => {
+                        let c = self.caller(req)?;
+                        let view = self.lock().state.event(c.viewer(), id)?;
+                        reply.wire(req, &view);
+                    }
+                    ("PUT", []) => {
+                        let c = self.caller(req)?;
+                        let body: EventInput = req.decode()?;
+                        let view = self.mutate(|inner| {
+                            inner.state.update_event(c.actor(), id, &body, stamp()?)?;
+                            inner.state.event(c.viewer(), id)
+                        })?;
+                        reply.wire(req, &view);
+                    }
+                    ("DELETE", []) => {
+                        let c = self.caller(req)?;
+                        self.mutate(|inner| inner.state.delete_event(c.actor(), id))?;
+                        reply.wire(req, &Done { ok: true });
+                    }
+                    ("POST", ["cancel"]) => {
+                        let c = self.caller(req)?;
+                        let view = self.mutate(|inner| {
+                            inner.state.cancel_event(c.actor(), id, stamp()?)?;
+                            inner.state.event(c.viewer(), id)
+                        })?;
+                        reply.wire(req, &view);
+                    }
+                    ("POST", ["rsvp"]) => {
+                        let c = self.caller(req)?;
+                        let body: RsvpInput = req.decode()?;
+                        let view = self.mutate(|inner| {
+                            inner.state.rsvp(c.actor(), id, &body, stamp()?)?;
+                            inner.state.event(c.viewer(), id)
+                        })?;
+                        reply.wire(req, &view);
+                    }
+                    ("POST", ["guests"]) => {
+                        let c = self.caller(req)?;
+                        let body: GuestInput = req.decode()?;
+                        let token = miniframework::session::random_token()
+                            .map_err(|_| ApiError::new(500, "no_randomness", "No random source"))?;
+                        let view = self.mutate(|inner| {
+                            inner.state.add_guest(c.actor(), id, &body.name, token)?;
+                            inner.state.event(c.viewer(), id)
+                        })?;
+                        reply.wire_status(req, 201, &view);
+                    }
+                    ("DELETE", ["guests", guest]) => {
+                        let c = self.caller(req)?;
+                        let guest: u32 = guest.parse().map_err(|_| not_found("guest"))?;
+                        let view = self.mutate(|inner| {
+                            inner.state.remove_guest(c.actor(), id, guest)?;
+                            inner.state.event(c.viewer(), id)
+                        })?;
+                        reply.wire(req, &view);
+                    }
+                    _ => return Err(not_found("event route")),
+                }
+            }
+            ("GET", "/api/v1/admin/screen") => {
+                self.admin(req)?;
+                let screen = self.lock().state.screen.clone();
+                reply.wire(req, &screen);
+            }
+            ("PUT", "/api/v1/admin/screen") => {
+                self.admin(req)?;
+                let body: ScreenSettings = req.decode()?;
+                if !(5..=60).contains(&body.brightness) {
+                    return Err(ApiError::bad_request("Brightness: 5 to 60 %"));
+                }
+                let screen = self.mutate(|inner| {
+                    // The last touch is the board's to say.
+                    let last_touch = std::mem::take(&mut inner.state.screen.last_touch);
+                    inner.state.screen = ScreenSettings {
+                        last_touch,
+                        ..body.clone()
+                    };
+                    Ok(inner.state.screen.clone())
+                })?;
+                reply.wire(req, &screen);
+            }
+            // The screen as a picture (the desktop has no screen; the board
+            // shows the same thing). `?page=` picks a card of the rotation.
+            ("GET", "/api/v1/display/frame.bmp") => {
+                self.caller(req)?;
+                let page = req.param_num::<usize>("page")?.unwrap_or(0);
+                let (cards, _) = self.screen(now());
+                let pages = cards.len();
+                let card = cards
+                    .into_iter()
+                    .nth(page.min(pages.saturating_sub(1)))
+                    .ok_or_else(|| ApiError::not_found("Nothing to show"))?;
+                let ctx = crate::screen::Context {
+                    name: self
+                        .origin
+                        .trim_start_matches("https://")
+                        .trim_start_matches("http://")
+                        .into(),
+                    page,
+                    pages,
+                };
+                let mut bmp = Vec::new();
+                std::io::Read::read_to_end(
+                    &mut crate::screen::BmpStream::new(crate::screen::Frame::new(card, ctx)),
+                    &mut bmp,
+                )
+                .map_err(|e| ApiError::new(500, "render", e.to_string()))?;
+                reply.owned(200, "image/bmp", bmp);
+            }
+            ("GET", "/api/v1/admin/delivery") => {
+                self.admin(req)?;
+                reply.wire(req, &self.delivery_view());
+            }
+            ("POST", "/api/v1/admin/bot") => {
+                self.admin(req)?;
+                let body: BotSetup = req.decode()?;
+                let setup = crate::outbound::setup_from(&body)?;
+                self.outbox()?.begin_setup(setup)?;
+                reply.wire_status(req, 202, &self.delivery_view());
+            }
+            ("DELETE", "/api/v1/admin/bot") => {
+                self.admin(req)?;
+                self.outbox()?.remove_bot();
+                reply.wire(req, &self.delivery_view());
+            }
+            ("POST", "/api/v1/admin/mail") => {
+                self.admin(req)?;
+                let body: MailSetupInput = req.decode()?;
+                self.outbox()?
+                    .begin_mail_setup(crate::outbound::MailSetup {
+                        api_key: body.api_key,
+                        sender_email: body.sender_email,
+                        built_in: false,
+                    })?;
+                reply.wire_status(req, 202, &self.delivery_view());
+            }
+            ("DELETE", "/api/v1/admin/mail") => {
+                self.admin(req)?;
+                self.outbox()?.remove_mail();
+                reply.wire(req, &self.delivery_view());
+            }
+            ("POST", "/api/v1/admin/delivery/test") => {
+                let c = self.admin(req)?;
+                let body: DeliveryTest = req.decode()?;
+                let outbox = self.outbox()?;
+                let me = self
+                    .lock()
+                    .state
+                    .person(c.id)
+                    .cloned()
+                    .ok_or_else(|| not_found("person"))?;
+                let d = match body.kind.as_str() {
+                    "dm" if me.mastodon.is_empty() => {
+                        return Err(ApiError::bad_request("Add your Mastodon handle on your settings page first"))
+                    }
+                    "dm" => crate::notify::Delivery {
+                        channel: "dm",
+                        to: me.mastodon.clone(),
+                        name: me.display_name.clone(),
+                        subject: String::new(),
+                        text: "This is Merit Ledger's test message. Notifications will come like this.".into(),
+                        link: "/".into(),
+                    },
+                    "email" if me.email.is_empty() => {
+                        return Err(ApiError::bad_request("Add your email address on your settings page first"))
+                    }
+                    "email" => crate::notify::Delivery {
+                        channel: "email",
+                        to: me.email.clone(),
+                        name: me.display_name.clone(),
+                        subject: "Merit Ledger test email".into(),
+                        text: format!("{},\n\nThis is Merit Ledger's test email. Reminders will come like this.", me.display_name),
+                        link: "/".into(),
+                    },
+                    _ => return Err(ApiError::bad_request("kind: dm or email")),
+                };
+                if !outbox.send(&d, &self.origin, now()) {
+                    return Err(ApiError::new(
+                        409,
+                        "not_ready",
+                        "That channel isn't set up yet, or the outbox is full",
+                    ));
+                }
+                reply.wire_status(req, 202, &self.delivery_view());
+            }
+            ("POST", _) if path.starts_with("/api/v1/admin/delivery/retry/") => {
+                self.admin(req)?;
+                let id: u32 = Self::id_after(req, "/api/v1/admin/delivery/retry")
+                    .and_then(|id| id.parse().ok())
+                    .ok_or_else(|| not_found("delivery"))?;
+                self.outbox()?.retry(id)?;
+                reply.wire(req, &self.delivery_view());
+            }
+            _ => return Ok(false),
+        }
+        Ok(true)
+    }
+
+    /// What the board's screen shows now, and how to drive it (the
+    /// brightness already lowered at night).
+    pub fn screen(&self, now: u64) -> (Vec<crate::screen::Card>, ScreenSettings) {
+        let inner = self.lock();
+        let mut settings = inner.state.screen.clone();
+        if now != 0 && inner.state.screen_night(now) {
+            settings.brightness = settings.brightness.min(5);
+        }
+        (inner.state.screen_cards(now), settings)
+    }
+
+    fn outbox(&self) -> Result<&Arc<crate::outbound::Outbox>, ApiError> {
+        self.outbox
+            .as_ref()
+            .ok_or_else(|| ApiError::new(409, "no_outbox", "This build sends no messages"))
+    }
+
+    fn delivery_view(&self) -> DeliveryView {
+        self.outbox.as_ref().map(|o| o.view()).unwrap_or_default()
+    }
+
+    /// `GET /cal/event/<id>.ics[?t=token]`: one event, for its people.
+    fn event_ics(&self, req: &Request<'_>, reply: &mut Reply<'_>) -> Result<(), ApiError> {
+        let id: u32 = req
+            .path
+            .strip_prefix("/cal/event/")
+            .and_then(|p| p.strip_suffix(".ics"))
+            .and_then(|p| p.parse().ok())
+            .ok_or_else(|| ApiError::not_found("No such event"))?;
+        let viewer = self.viewer(req);
+        let token = req.param("t").unwrap_or_default();
+        let inner = self.lock();
+        let allowed = inner.state.event(viewer, id).is_ok()
+            || inner.state.event_for_guest(id, &token).is_ok();
+        let e = inner
+            .state
+            .events
+            .iter()
+            .find(|e| e.id == id && allowed)
+            .ok_or_else(|| ApiError::not_found("No such event"))?;
+        let body = crate::events::ics(e, &self.origin);
+        reply.owned(200, "text/calendar; charset=utf-8", body.into_bytes());
+        reply.header(
+            "Content-Disposition",
+            format!("attachment; filename=\"event-{id}.ics\""),
+        );
+        Ok(())
+    }
+
+    fn oauth(&self) -> Result<&Arc<miniframework::oauth::OAuth>, ApiError> {
+        self.oauth.as_ref().ok_or_else(|| {
+            ApiError::new(
+                404,
+                "no_oauth",
+                "Mastodon sign-in isn't available on this build",
+            )
+        })
+    }
+
+    /// The text, account (person or 0 = bot) and visibility to publish
+    /// `item` of `person` with, or None when it mustn't (or can't) go out.
+    fn publication(
+        &self,
+        state: &State,
+        item: &crate::publish::Item,
+        person: u32,
+    ) -> Option<(u32, String, String)> {
+        let outbox = self.outbox.as_ref()?;
+        let p = state.person(person)?;
+        let (account, instance) = match outbox.link_of(person) {
+            Some(l) => (person, l.instance),
+            None if outbox.bot_ready() => (0, outbox.view().bot_instance),
+            None => return None,
+        };
+        // The board's address only works at home: link to it only on a
+        // household instance.
+        let local = instance
+            .split_once("://")
+            .map_or(instance.as_str(), |(_, h)| h)
+            .split(['/', ':'])
+            .next()
+            .is_some_and(|h| h.ends_with(".local"));
+        let link = local.then(|| match item {
+            crate::publish::Item::Entry(..) => format!("{}/p/{person}", self.origin),
+            crate::publish::Item::Post(post, ..) => format!("{}/v/{}", self.origin, post.vow),
+        });
+        let text = crate::publish::publishable(item, link.as_deref())?;
+        let text = if account == 0 {
+            // The bot says whose it is.
+            format!("{}: {text}", p.display_name)
+        } else {
+            text
+        };
+        let visibility = crate::publish::check_visibility(&p.publish_visibility)
+            .unwrap_or_else(|_| "unlisted".into());
+        Some((account, text, visibility))
+    }
+
+    /// After a saved change: auto-publish new content, and make published
+    /// items follow edits and deletes (best effort).
+    fn follow_publishing(
+        &self,
+        state: &State,
+        before: &[StoredEntry],
+        before_posts: &[StoredPost],
+        before_vows: &[StoredVow],
+    ) {
+        let Some(outbox) = &self.outbox else { return };
+        let now = wall().unwrap_or(0);
+        let old: HashMap<u32, &StoredEntry> = before.iter().map(|e| (e.id, e)).collect();
+        for e in &state.entries {
+            let Some(kind) = state.kind(&e.kind) else {
+                continue;
+            };
+            let item = crate::publish::Item::Entry(e, &kind);
+            let key = crate::publish::key(&item);
+            match old.get(&e.id) {
+                None => {
+                    let fresh = e.created + 3600 >= now;
+                    let auto = state.person(e.person).is_some_and(|p| p.auto_publish);
+                    if fresh && auto {
+                        if let Some((account, text, vis)) = self.publication(state, &item, e.person)
+                        {
+                            outbox.publish(&key, account, text, &vis, now);
+                        }
+                    }
+                }
+                Some(o) if *o != e => match self.publication(state, &item, e.person) {
+                    Some((_, text, _)) => outbox.edit(&key, text, now),
+                    None => outbox.unpublish(&key, now),
+                },
+                _ => {}
+            }
+        }
+        let now_ids: HashSet<u32> = state.entries.iter().map(|e| e.id).collect();
+        for e in before.iter().filter(|e| !now_ids.contains(&e.id)) {
+            outbox.unpublish(&format!("e{}", e.id), now);
+        }
+        let old_posts: HashMap<u32, &StoredPost> = before_posts.iter().map(|p| (p.id, p)).collect();
+        let old_vows: HashMap<u32, &StoredVow> = before_vows.iter().map(|v| (v.id, v)).collect();
+        for p in &state.posts {
+            let Some(vow) = state.vows.iter().find(|v| v.id == p.vow) else {
+                continue;
+            };
+            let vow_changed = old_vows
+                .get(&vow.id)
+                .is_some_and(|v| v.visibility != vow.visibility || v.text != vow.text);
+            let body = Self::post_body(&self.sd, p);
+            let item = crate::publish::Item::Post(p, vow, &body);
+            let key = crate::publish::key(&item);
+            match old_posts.get(&p.id) {
+                None => {
+                    let auto = state.person(p.person).is_some_and(|q| q.auto_publish);
+                    if auto && p.created + 3600 >= now {
+                        if let Some((account, text, vis)) = self.publication(state, &item, p.person)
+                        {
+                            outbox.publish(&key, account, text, &vis, now);
+                        }
+                    }
+                }
+                Some(o) if *o != p || vow_changed => match self.publication(state, &item, p.person)
+                {
+                    Some((_, text, _)) => outbox.edit(&key, text, now),
+                    None => outbox.unpublish(&key, now),
+                },
+                _ => {}
+            }
+        }
+        let post_ids: HashSet<u32> = state.posts.iter().map(|p| p.id).collect();
+        for p in before_posts.iter().filter(|p| !post_ids.contains(&p.id)) {
+            outbox.unpublish(&format!("p{}", p.id), now);
+        }
+    }
+
+    /// The share button: publish one item now.
+    fn share(&self, c: Caller, item_kind: char, id: u32) -> Result<PublishResult, ApiError> {
+        let outbox = self.outbox()?;
+        let inner = self.lock();
+        let state = &inner.state;
+        let not_found = || ApiError::not_found("No such item");
+        let refuse = || {
+            ApiError::new(
+                409,
+                "not_publishable",
+                "Only your public practice and posts on public vows go to Mastodon (and not demerits or repentance)",
+            )
+        };
+        let (person, publication, key) = match item_kind {
+            'e' => {
+                let e = state
+                    .entries
+                    .iter()
+                    .find(|e| e.id == id)
+                    .ok_or_else(not_found)?;
+                let kind = state.kind(&e.kind).ok_or_else(not_found)?;
+                let item = crate::publish::Item::Entry(e, &kind);
+                (
+                    e.person,
+                    self.publication(state, &item, e.person),
+                    crate::publish::key(&item),
+                )
+            }
+            _ => {
+                let p = state
+                    .posts
+                    .iter()
+                    .find(|p| p.id == id)
+                    .ok_or_else(not_found)?;
+                let vow = state
+                    .vows
+                    .iter()
+                    .find(|v| v.id == p.vow)
+                    .ok_or_else(not_found)?;
+                let body = Self::post_body(&self.sd, p);
+                let item = crate::publish::Item::Post(p, vow, &body);
+                (
+                    p.person,
+                    self.publication(state, &item, p.person),
+                    crate::publish::key(&item),
+                )
+            }
+        };
+        if person != c.id {
+            return Err(ApiError::new(
+                403,
+                "forbidden",
+                "You can share only your own",
+            ));
+        }
+        if !outbox.bot_ready() && outbox.link_of(person).is_none() {
+            return Err(ApiError::new(
+                409,
+                "no_account",
+                "Link your Mastodon account in Settings first (or ask an admin to set up the household bot)",
+            ));
+        }
+        let (account, text, visibility) = publication.ok_or_else(refuse)?;
+        let as_whom = if account == 0 {
+            outbox.view().bot_handle
+        } else {
+            outbox
+                .link_of(account)
+                .map(|l| l.handle)
+                .unwrap_or_default()
+        };
+        drop(inner);
+        let queued = outbox.publish(&key, account, text, &visibility, wall().unwrap_or(0));
+        Ok(PublishResult {
+            state: if queued { "queued" } else { "already" }.into(),
+            as_whom,
+        })
+    }
+
+    /// Where a Mastodon sign-in or link stands; when the framework hands
+    /// over the identity, it becomes a session or a link here.
+    fn oauth_status(
+        &self,
+        req: &Request<'_>,
+        reply: &mut Reply<'_>,
+        ticket: &str,
+    ) -> Result<OAuthStatus, ApiError> {
+        use miniframework::oauth::Poll;
+        let status = |state: &str| OAuthStatus {
+            state: state.into(),
+            ..Default::default()
+        };
+        let oauth = self.oauth()?;
+        Ok(match oauth.poll(req, ticket) {
+            Poll::Waiting => status("waiting"),
+            Poll::Redirect(location) => OAuthStatus {
+                location,
+                ..status("redirect")
+            },
+            Poll::Failed(message) => OAuthStatus {
+                message,
+                ..status("failed")
+            },
+            Poll::Done(identity, intent) => {
+                let token = oauth.take_token(&identity);
+                let outcome = if let Some(person) = intent.strip_prefix("link:") {
+                    let person: u32 = person.parse().unwrap_or(0);
+                    let base = self
+                        .instances
+                        .iter()
+                        .find(|p| p.id == identity.provider)
+                        .map(|p| (p.base.clone(), p.trust))
+                        .ok_or_else(|| ApiError::not_found("No such provider"));
+                    base.and_then(|(base, trust)| {
+                        self.mutate(|inner| {
+                            inner.state.link_identity(
+                                person,
+                                &identity.provider,
+                                &identity.subject,
+                                &identity.handle,
+                            )
+                        })?;
+                        if let (Some(token), Some(outbox)) = (token, &self.outbox) {
+                            outbox.save_link(
+                                person,
+                                &crate::outbound::StoredLink {
+                                    provider: identity.provider.clone(),
+                                    instance: base,
+                                    subject: identity.subject.clone(),
+                                    handle: identity.handle.clone(),
+                                    token,
+                                    anchor: if trust == miniframework::oauth::Trust::Household {
+                                        "household-ca".into()
+                                    } else {
+                                        "public".into()
+                                    },
+                                },
+                            )?;
+                        }
+                        Ok("linked")
+                    })
+                } else {
+                    self.mutate(|inner| {
+                        let id = inner
+                            .state
+                            .person_for_identity(&identity.provider, &identity.subject)?;
+                        Self::sign_in(inner, id, req, reply)
+                    })
+                    .map(|_| "signed_in")
+                };
+                match outcome {
+                    Ok(result) => {
+                        log::info!("Mastodon {result}: {}", identity.handle);
+                        OAuthStatus {
+                            result: result.into(),
+                            ..status("done")
+                        }
+                    }
+                    Err(e) => OAuthStatus {
+                        message: e.message,
+                        ..status("failed")
+                    },
+                }
+            }
+        })
+    }
+
+    /// Mastodon sign-in, linking, and sharing (Sprint 11).
+    fn route_mastodon(&self, req: &Request<'_>, reply: &mut Reply<'_>) -> Result<bool, ApiError> {
+        let path = req.path;
+        match (req.method, path) {
+            ("GET", "/api/v1/auth/providers") => {
+                let providers = if self.oauth.is_some() {
+                    self.instances
+                        .iter()
+                        .map(|p| ProviderView {
+                            id: p.id.clone(),
+                            name: p.id.clone(),
+                            base: p.base.clone(),
+                        })
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                reply.wire(req, &ProviderList { providers });
+            }
+            ("POST", "/api/v1/auth/oauth/start") => {
+                let start: OAuthStart = req.decode()?;
+                let oauth = self.oauth()?;
+                let host = req.header("Host").trim();
+                let origin = format!("{}://{host}", if req.secure { "https" } else { "http" });
+                let ticket = if start.link {
+                    let c = self.caller(req)?;
+                    oauth.start_keeping_token(&start.provider, &origin, format!("link:{}", c.id))?
+                } else {
+                    oauth.start(&start.provider, &origin, "login".into())?
+                };
+                reply.header("Set-Cookie", oauth.cookie(&ticket, req.secure));
+                reply.wire(req, &OAuthTicket { ticket });
+            }
+            ("GET", _) if path.starts_with("/api/v1/auth/oauth/") => {
+                let ticket = &path["/api/v1/auth/oauth/".len()..];
+                let status = self.oauth_status(req, reply, ticket)?;
+                reply.wire(req, &status);
+            }
+            ("DELETE", "/api/v1/me/mastodon") => {
+                let c = self.caller(req)?;
+                let me = self.mutate(|inner| {
+                    inner.state.unlink(c.id)?;
+                    Self::me(&inner.state, c.id)
+                })?;
+                if let Some(outbox) = &self.outbox {
+                    outbox.remove_link(c.id, wall().unwrap_or(0));
+                }
+                reply.wire(req, &me);
+            }
+            ("POST", _) if path.starts_with("/api/v1/entries/") && path.ends_with("/publish") => {
+                let c = self.caller(req)?;
+                let id: u32 = match req.rest("/api/v1/entries").as_deref() {
+                    Some([id, "publish"]) => id.parse().ok(),
+                    _ => None,
+                }
+                .ok_or_else(|| ApiError::not_found("No such entry"))?;
+                let result = self.share(c, 'e', id)?;
+                reply.wire_status(req, 202, &result);
+            }
+            ("POST", _) if path.starts_with("/api/v1/posts/") && path.ends_with("/publish") => {
+                let c = self.caller(req)?;
+                let id: u32 = match req.rest("/api/v1/posts").as_deref() {
+                    Some([id, "publish"]) => id.parse().ok(),
+                    _ => None,
+                }
+                .ok_or_else(|| ApiError::not_found("No such post"))?;
+                let result = self.share(c, 'p', id)?;
+                reply.wire_status(req, 202, &result);
+            }
+            _ => return Ok(false),
+        }
+        Ok(true)
+    }
+
+    /// Reading lists (Sprint 12). The phone searches Open Library itself;
+    /// these store what people save, and log reading sessions.
+    fn route_reading(&self, req: &Request<'_>, reply: &mut Reply<'_>) -> Result<bool, ApiError> {
+        let path = req.path;
+        match (req.method, path) {
+            ("GET", "/api/v1/shelf") => {
+                let viewer = self.viewer(req);
+                let books = self.lock().state.shelf(viewer);
+                reply.wire(req, &ReadingList { books });
+            }
+            ("GET", "/api/v1/reading") => {
+                let c = self.caller(req)?;
+                let person = req
+                    .param_num::<u32>("person")?
+                    .filter(|p| *p != 0)
+                    .unwrap_or(c.id);
+                let books = self.lock().state.readings_of(c.viewer(), person);
+                reply.wire(req, &ReadingList { books });
+            }
+            ("POST", "/api/v1/reading") => {
+                let c = self.caller(req)?;
+                let body: ReadingInput = req.decode()?;
+                let books = self.mutate(|inner| {
+                    inner.state.add_reading(c.actor(), &body, wall())?;
+                    Ok(inner.state.readings_of(c.viewer(), c.id))
+                })?;
+                reply.wire_status(req, 201, &ReadingList { books });
+            }
+            (_, _) if path.starts_with("/api/v1/reading/") => {
+                let c = self.caller(req)?;
+                let parts = req.rest("/api/v1/reading").unwrap_or_default();
+                let id: u32 = parts
+                    .first()
+                    .and_then(|id| id.parse().ok())
+                    .ok_or_else(|| ApiError::not_found("No such book on a list"))?;
+                let person = self
+                    .lock()
+                    .state
+                    .readings
+                    .iter()
+                    .find(|r| r.id == id)
+                    .map_or(c.id, |r| r.person);
+                let books = match (req.method, &parts[1..]) {
+                    ("PATCH", []) => {
+                        let body: ReadingUpdate = req.decode()?;
+                        self.mutate(|inner| {
+                            inner.state.update_reading(c.actor(), id, &body, wall())?;
+                            Ok(inner.state.readings_of(c.viewer(), person))
+                        })?
+                    }
+                    ("DELETE", []) => self.mutate(|inner| {
+                        inner.state.delete_reading(c.actor(), id)?;
+                        Ok(inner.state.readings_of(c.viewer(), person))
+                    })?,
+                    ("POST", ["log"]) => {
+                        let body: ReadingLog = req.decode()?;
+                        self.mutate(|inner| {
+                            inner.state.log_reading(c.actor(), id, &body, wall())?;
+                            Ok(inner.state.readings_of(c.viewer(), person))
+                        })?
+                    }
+                    _ => return Err(ApiError::not_found("No such reading route")),
+                };
+                reply.wire(req, &ReadingList { books });
+            }
+            _ => return Ok(false),
+        }
+        Ok(true)
+    }
+
+    /// Spends the request's cost from its route's bucket, or answers 429
+    /// (that route is busy) or 503 (the board is) with a Retry-After.
+    fn admit(&self, req: &Request<'_>, reply: &mut Reply<'_>) -> Result<(), ApiError> {
+        use miniframework::rate_limit::Rejection;
+        let Some((class, cost)) = metered(req.method, req.path) else {
+            return Ok(());
+        };
+        let mut key = [0u8; 16];
+        key[..class.len()].copy_from_slice(class.as_bytes());
+        match self.limiter.admit(key, cost) {
+            Ok(()) => Ok(()),
+            Err(Rejection::Caller { retry_after }) => {
+                reply.header("Retry-After", retry_after.to_string());
+                Err(ApiError::new(
+                    429,
+                    "busy",
+                    format!("Too many at once. Try again in {retry_after} s"),
+                ))
+            }
+            Err(Rejection::Capacity { retry_after }) => {
+                reply.header("Retry-After", retry_after.to_string());
+                Err(ApiError::new(
+                    503,
+                    "busy",
+                    "The board is busy. Try again in a moment",
+                ))
+            }
+            Err(Rejection::InvalidCost) => Ok(()),
+        }
+    }
+
     fn route(&self, req: &Request<'_>, reply: &mut Reply<'_>) -> Result<(), ApiError> {
         let path = req.path;
+        if path == "/auth/callback" && req.method == "GET" {
+            // The instance sends the browser back here: carry on at the
+            // "finishing" page, which polls the ticket.
+            let location = match self.oauth().and_then(|o| o.callback(req)) {
+                Ok(ticket) => format!("/signin/finishing?t={ticket}"),
+                Err(e) => format!(
+                    "/signin?error={}",
+                    miniframework::fetch::percent_encode(&e.message)
+                ),
+            };
+            reply.bytes(302, "text/plain; charset=utf-8", b"");
+            reply.header("Location", location);
+            reply.header("Cache-Control", "no-store");
+            return Ok(());
+        }
+        if req.method == "GET" && path.starts_with("/cal/event/") && path.ends_with(".ics") {
+            return self.event_ics(req, reply);
+        }
         if req.method == "GET" && path.starts_with("/cal/") && path.ends_with(".ics") {
             return self.calendar_feed(req, reply);
         }
@@ -1660,6 +2706,9 @@ impl App {
             || self.route_transfer(req, reply)?
             || self.route_vows(req, reply)?
             || self.route_practice_docs(req, reply)?
+            || self.route_notify(req, reply)?
+            || self.route_mastodon(req, reply)?
+            || self.route_reading(req, reply)?
         {
             return Ok(());
         }
@@ -1690,6 +2739,16 @@ impl App {
                 })?;
                 reply.wire_status(req, 201, &me);
             }
+            ("POST", "/api/v1/auth/guest") => {
+                let body: VisitorInput = req.decode()?;
+                let now = wall().ok_or_else(crate::ledger::clock_not_set)?;
+                let me = self.mutate(|inner| {
+                    let id = inner.state.add_visitor(&body.display_name, now)?;
+                    Self::sign_in(inner, id, req, reply)?;
+                    Self::me(&inner.state, id)
+                })?;
+                reply.wire_status(req, 201, &me);
+            }
             ("POST", "/api/v1/auth/pin") => {
                 let body: PinSignIn = req.decode()?;
                 let me = self.pin_sign_in(&body, req, reply)?;
@@ -1700,6 +2759,11 @@ impl App {
                 let caller = self.caller(req).ok();
                 self.mutate(|inner| {
                     match (all, caller) {
+                        // A guest has nothing to sign back in with: leaving
+                        // ends the visit, and their log goes with it.
+                        (_, Some(c)) if c.guest => {
+                            inner.state.remove_person(0, c.id, false)?;
+                        }
                         (true, Some(c)) => {
                             inner.state.sessions.revoke_subject(c.id);
                         }
@@ -1734,6 +2798,17 @@ impl App {
                     if let Some(calendar) = &body.calendar {
                         inner.state.set_my_calendar(c.id, calendar)?;
                     }
+                    inner.state.set_delivery(
+                        c.id,
+                        body.mastodon.as_deref(),
+                        body.dm_off,
+                        body.email_off,
+                    )?;
+                    inner.state.set_publishing(
+                        c.id,
+                        body.auto_publish,
+                        body.publish_visibility.as_deref(),
+                    )?;
                     Self::me(&inner.state, c.id)
                 })?;
                 reply.wire(req, &me);
@@ -1925,6 +3000,39 @@ impl App {
     }
 }
 
+/// The buckets (Sprint 14): each class below has its own, holding 30
+/// tokens and refilling one a second; a request spends its cost. So sign-up
+/// allows 3 at once and then one every 10 s, a guest link 10 and then one
+/// every 3 s. The board as a whole refills 4 a second. PIN sign-in has its
+/// own lockout (`pin::Guard`); signed-in household use isn't metered.
+const METER: miniframework::rate_limit::Limits = miniframework::rate_limit::Limits {
+    global: miniframework::rate_limit::Budget {
+        burst: 60,
+        per_second: 4,
+    },
+    caller: miniframework::rate_limit::Budget {
+        burst: 30,
+        per_second: 1,
+    },
+    callers: 8,
+    concurrent: 4,
+};
+
+/// A metered route's class (at most 16 bytes) and cost.
+fn metered(method: &str, path: &str) -> Option<(&'static str, u32)> {
+    match (method, path) {
+        ("POST", "/api/v1/setup" | "/api/v1/auth/signup") => Some(("signup", 10)),
+        ("POST", "/api/v1/auth/guest") => Some(("visitor", 5)),
+        ("POST", "/api/v1/auth/oauth/start") => Some(("oauth", 5)),
+        ("POST", p) if p.starts_with("/api/v1/events/") && p.ends_with("/guest-rsvp") => {
+            Some(("guest", 3))
+        }
+        ("GET", "/api/v1/display/frame.bmp") => Some(("frame", 2)),
+        ("GET", "/api/v1/admin/export.json") => Some(("export", 10)),
+        _ => None,
+    }
+}
+
 impl Service for App {
     /// An import can be several megabytes: read as it arrives.
     fn streamed_body(&self, method: &str, path: &str) -> Option<usize> {
@@ -1987,7 +3095,7 @@ impl Service for App {
     }
 
     fn handle(&self, req: &Request<'_>, reply: &mut Reply<'_>) {
-        if let Err(e) = self.route(req, reply) {
+        if let Err(e) = self.admit(req, reply).and_then(|()| self.route(req, reply)) {
             reply.fail(req, &e);
         }
     }
@@ -2002,6 +3110,7 @@ impl Service for App {
             Me::SCHEMA,
             SetupInput::SCHEMA,
             SignUpInput::SCHEMA,
+            VisitorInput::SCHEMA,
             PinSignIn::SCHEMA,
             MeUpdate::SCHEMA,
             PinChange::SCHEMA,
@@ -2044,6 +3153,32 @@ impl Service for App {
             PracticeView::SCHEMA,
             PracticeInput::SCHEMA,
             PracticeDone::SCHEMA,
+            Summary::SCHEMA,
+            NotificationList::SCHEMA,
+            ReadInput::SCHEMA,
+            ReminderList::SCHEMA,
+            ReminderInput::SCHEMA,
+            CallInput::SCHEMA,
+            CallList::SCHEMA,
+            EventList::SCHEMA,
+            EventView::SCHEMA,
+            EventInput::SCHEMA,
+            RsvpInput::SCHEMA,
+            GuestInput::SCHEMA,
+            DeliveryView::SCHEMA,
+            BotSetup::SCHEMA,
+            MailSetupInput::SCHEMA,
+            DeliveryTest::SCHEMA,
+            ScreenSettings::SCHEMA,
+            ProviderList::SCHEMA,
+            OAuthStart::SCHEMA,
+            OAuthTicket::SCHEMA,
+            OAuthStatus::SCHEMA,
+            PublishResult::SCHEMA,
+            ReadingList::SCHEMA,
+            ReadingInput::SCHEMA,
+            ReadingUpdate::SCHEMA,
+            ReadingLog::SCHEMA,
         ];
         #[cfg(feature = "gate")]
         schemas.extend([crate::gate::GateStats::SCHEMA, SdTestResult::SCHEMA]);

@@ -34,11 +34,11 @@ files: [../sprints/](../sprints/README.md).
 | 8 | [Texts and build-a-practice](../sprints/sprint08.md) | 3, 6 | 9 | **done** 2026-10-19 (owner reviews in place) |
 | R1 | [Detour: precept texts, research and sources](../sprints/detour-precepts.md) | — | 8 | research done 2026-10-19; owner review of renderings pending |
 | 9 | [Vows, the vow blog and precepts](../sprints/sprint09.md) | 4, R1 | 8, 12 | **done** 2026-10-19 (owner reviews in place) |
-| 10 | [Notifications, reminders and invitations](../sprints/sprint10.md) | 7 | 12 | |
-| 11 | [Mastodon sign-in and publishing](../sprints/sprint11.md) | 4, 10 | 12 | |
-| 12 | [Books via Open Library](../sprints/sprint12.md) | 3 | 9–11 | |
-| 13 | [The board's screen and touch menu](../sprints/sprint13.md) | 1, 3, 7, 10 | — | |
-| 14 | [Hardening and release](../sprints/sprint14.md) | all | — | |
+| 10 | [Notifications, reminders and invitations](../sprints/sprint10.md) | 7 | 12 | **done** 2026-10-19 (live DM/email run with the owner pending) |
+| 11 | [Mastodon sign-in and publishing](../sprints/sprint11.md) | 4, 10 | 12 | **done** 2026-10-19 (live posts with the owner pending) |
+| 12 | [Books via Open Library](../sprints/sprint12.md) | 3 | 9–11 | **done** 2026-10-19 |
+| 13 | [The board's screen and touch menu](../sprints/sprint13.md) | 1, 3, 7, 10 | — | **built** 2026-10-19; board checks pending |
+| 14 | [Hardening and release](../sprints/sprint14.md) | all | — | **done** 2026-10-19; week of use and restore test pending (owner) |
 
 ### Parallel tracks
 

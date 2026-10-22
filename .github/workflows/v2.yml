@@ -1,0 +1,30 @@
+---
+# Merit Ledger v2 (Rust API + Angular UI): `make check` on GitHub (Sprint 14).
+# The API depends on miniframework by path (../../microcontroller/...), so
+# both public repos are checked out side by side, as on the owner's PC.
+# The firmware (`make firmware`) needs the ESP-IDF toolchain: not built here.
+name: v2 check
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: merit_ledger
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: matthewdeanmartin/microcontroller
+          path: microcontroller
+          persist-credentials: false
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
+      - name: UI dependencies
+        working-directory: merit_ledger/meritledger_ui
+        run: npm ci
+      - name: make check
+        working-directory: merit_ledger
+        run: make check

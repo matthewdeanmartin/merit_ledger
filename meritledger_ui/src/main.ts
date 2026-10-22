@@ -5,7 +5,6 @@ import { Api } from './app/api';
 import { App } from './app/app';
 import { UpdateRecovery } from './app/update-recovery';
 import { Home } from './app/pages/home';
-import { Setup, SignIn, SignUp } from './app/pages/auth';
 
 async function ready(api: Api): Promise<void> {
   if (!api.ready()) await api.refresh();
@@ -67,9 +66,30 @@ class GlobalErrorHandler implements ErrorHandler {
 // Path routing: the board serves index.html for every extension-less path.
 const routes: Routes = [
   { path: '', component: Home, canActivate: [signedIn], title: 'Merit Ledger' },
-  { path: 'setup', component: Setup, canActivate: [setupOnly], title: 'Set up · Merit Ledger' },
-  { path: 'signin', component: SignIn, canActivate: [signedOut], title: 'Sign in · Merit Ledger' },
-  { path: 'signup', component: SignUp, canActivate: [signedOut], title: 'Guest account · Merit Ledger' },
+  // Sign-in pages load on demand: someone signed in never needs them.
+  {
+    path: 'setup',
+    canActivate: [setupOnly],
+    loadComponent: () => import('./app/pages/auth').then((m) => m.Setup),
+    title: 'Set up · Merit Ledger',
+  },
+  {
+    path: 'signin',
+    canActivate: [signedOut],
+    loadComponent: () => import('./app/pages/auth').then((m) => m.SignIn),
+    title: 'Sign in · Merit Ledger',
+  },
+  {
+    path: 'signin/finishing',
+    loadComponent: () => import('./app/pages/finishing').then((m) => m.Finishing),
+    title: 'Signing in · Merit Ledger',
+  },
+  {
+    path: 'signup',
+    canActivate: [signedOut],
+    loadComponent: () => import('./app/pages/auth').then((m) => m.SignUp),
+    title: 'Guest account · Merit Ledger',
+  },
   {
     path: 'house',
     canActivate: [boardReady],
@@ -81,6 +101,36 @@ const routes: Routes = [
     canActivate: [boardReady],
     loadComponent: () => import('./app/pages/person').then((m) => m.Person),
     title: 'Profile · Merit Ledger',
+  },
+  {
+    path: 'books',
+    canActivate: [boardReady],
+    loadComponent: () => import('./app/pages/books').then((m) => m.Books),
+    title: 'Books · Merit Ledger',
+  },
+  {
+    path: 'events',
+    canActivate: [signedIn],
+    loadComponent: () => import('./app/pages/events').then((m) => m.Events),
+    title: 'Events · Merit Ledger',
+  },
+  {
+    path: 'events/:id',
+    canActivate: [signedIn],
+    loadComponent: () => import('./app/pages/events').then((m) => m.Events),
+    title: 'Event · Merit Ledger',
+  },
+  {
+    path: 'e/:id',
+    canActivate: [boardReady],
+    loadComponent: () => import('./app/pages/guest-rsvp').then((m) => m.GuestRsvp),
+    title: 'Invitation · Merit Ledger',
+  },
+  {
+    path: 'notifications',
+    canActivate: [signedIn],
+    loadComponent: () => import('./app/pages/notifications').then((m) => m.Notifications),
+    title: 'Notifications · Merit Ledger',
   },
   {
     path: 'build',
@@ -138,7 +188,7 @@ const routes: Routes = [
   },
   {
     path: 'timer',
-    canActivate: [signedIn],
+    canActivate: [boardReady],
     loadComponent: () => import('./app/pages/timer-page').then((m) => m.TimerPage),
     title: 'Timer · Merit Ledger',
   },
@@ -155,10 +205,21 @@ const routes: Routes = [
     title: 'You · Merit Ledger',
   },
   {
+    path: 'admin/messages',
+    canActivate: [signedIn, adminOnly],
+    loadComponent: () => import('./app/pages/messages-admin').then((m) => m.MessagesAdmin),
+    title: 'Messages · Merit Ledger',
+  },
+  {
     path: 'admin',
     canActivate: [signedIn, adminOnly],
     loadComponent: () => import('./app/pages/admin').then((m) => m.Admin),
     title: 'Household · Merit Ledger',
+  },
+  {
+    path: 'guide',
+    loadComponent: () => import('./app/pages/guide').then((m) => m.Guide),
+    title: 'Guide · Merit Ledger',
   },
   { path: '**', redirectTo: '' },
 ];

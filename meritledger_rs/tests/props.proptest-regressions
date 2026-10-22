@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d90c292d2329154465eb81f94c60480e3867725570e4372783cbe35bee17d9dc # shrinks to spec = "AAA27", utc = 0
+cc effcc94737747aa7644f3f995ec4b5636fa60df4c61b93b83ffd8775e3cdf8be # shrinks to text = ".", max = 1, lines = 0
+cc 2c0a2de598e9d5a67999c73a2234fd895e20f341bb4d17d05d4968f72c9175e6 # shrinks to requests = [(("GET", "/api/v1/shelf/0", "{}"), false)]
+cc 799fb5e197b983e52407a3fa1a661ff36c84d9f42fa413feacd611d4e5855399 # shrinks to ops = [("POST", "/api/v1/events", "{\"title\":\"<script>alert(1)</script>\",\"start\":1,\"end\":18446744073709551615,\"place\":\"\",\"notes\":\"\",\"invitees\":[],\"rev\":0}")]

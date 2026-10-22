@@ -5,6 +5,7 @@ import { Api, KindView, PracticeStep, PracticeView, problem } from '../api';
 import { newStep, STEP_KINDS, stepAmount, stepHeading, stepKind, TEMPLATES, Template } from '../practice-doc';
 import { move } from '../practice';
 import { LibraryEntry, TextLibrary } from '../text-library';
+import type { ReadingView } from '../books';
 import type { TimerPreset } from '../timer';
 
 function value(event: Event): string {
@@ -117,6 +118,14 @@ function value(event: Event): string {
                   </select>
                 </label>
               </div>
+              @if (s.kind === 'read' && books().length) {
+                <label>Book from your list
+                  <select [value]="s.book" (change)="pickBook(i, v($event))">
+                    <option value="">(none)</option>
+                    @for (b of books(); track b.id) { <option [value]="'r' + b.id">{{ b.title }}</option> }
+                  </select>
+                </label>
+              }
               @if (s.kind === 'note' || s.kind === 'art' || s.kind === 'read') {
                 <label>{{ s.kind === 'art' ? 'Prompt' : s.kind === 'read' ? 'What to read (book, chapter, pages)' : 'Text' }}
                   <textarea rows="2" maxlength="1000" [value]="s.note" (input)="set(i, 'note', v($event))"></textarea></label>
@@ -161,6 +170,7 @@ export class Build {
   readonly texts = signal<LibraryEntry[]>([]);
   readonly kinds = signal<KindView[]>([]);
   readonly timers = signal<TimerPreset[]>([]);
+  readonly books = signal<ReadingView[]>([]);
   readonly title = signal('');
   readonly visibility = signal('public');
   readonly steps = signal<PracticeStep[]>([]);
@@ -186,10 +196,14 @@ export class Build {
         this.loaded.set(true);
         return;
       }
-      const [texts, kinds, timers] = await Promise.all([this.library.entries(), this.api.kinds(), this.api.timers()]);
+      const [texts, kinds, timers] = await Promise.all([this.library.entries(), this.content.kinds(), this.content.timers()]);
       this.texts.set(texts);
       this.kinds.set(kinds.filter((k) => !k.archived && k.polarity === 'merit'));
       this.timers.set(timers.filter((t) => !t.archived));
+      this.api
+        .get<{ books: ReadingView[] }>('/api/v1/reading', 'ReadingList')
+        .then((r) => this.books.set(r.books.filter((b) => b.status !== 'done')))
+        .catch(() => undefined);
       if (id === 'new') {
         const t = TEMPLATES.find((x) => x.key === template);
         this.title.set(t?.title ?? '');
@@ -229,6 +243,14 @@ export class Build {
 
   set(i: number, field: 'title' | 'text' | 'timer' | 'logs_as' | 'note', value: string): void {
     this.steps.update((list) => list.map((s, n) => (n === i ? { ...s, [field]: value } : s)));
+  }
+
+  /** A book for a read step; its title becomes the step's "what to read" when that's empty. */
+  pickBook(i: number, book: string): void {
+    const b = this.books().find((x) => 'r' + x.id === book);
+    this.steps.update((list) =>
+      list.map((s, n) => (n === i ? { ...s, book, note: s.note || (b ? `${b.title}${b.author ? ', ' + b.author : ''}` : '') } : s)),
+    );
   }
 
   setNum(i: number, field: 'minutes' | 'count', value: string): void {

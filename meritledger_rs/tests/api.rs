@@ -190,7 +190,27 @@ fn concurrent_setups_make_exactly_one_admin() {
         .collect();
     let mut statuses: Vec<u16> = handles.into_iter().map(|h| h.join().unwrap()).collect();
     statuses.sort();
-    assert_eq!(statuses, vec![201, 409, 409, 409, 409, 409, 409, 409]);
+    // One admin; the rest are refused as taken (409) or, past sign-up's
+    // burst, as too many at once (429).
+    assert_eq!(statuses[0], 201);
+    assert!(
+        statuses[1..].iter().all(|s| matches!(s, 409 | 429)),
+        "{statuses:?}"
+    );
+}
+
+#[test]
+fn sign_up_is_rate_limited() {
+    let app = app();
+    let codes: Vec<u16> = (0..6)
+        .map(|i| {
+            let body = format!(r#"{{"display_name":"P{i}","pin":"1234","setup_code":""}}"#);
+            call(&app, "POST", "/api/v1/setup", None, &body).status
+        })
+        .collect();
+    // Three at once, then a wait (10 s per try after the burst).
+    assert_eq!(&codes[..3], &[201, 409, 409]);
+    assert!(codes[3..].iter().all(|&c| c == 429), "{codes:?}");
 }
 
 #[test]
@@ -271,7 +291,7 @@ fn people_without_a_pin_are_listed_but_cannot_sign_in() {
 }
 
 #[test]
-fn guests_sign_up_while_open() {
+fn members_sign_up_while_open() {
     let app = app();
     let dad = setup(&app);
     let r = call(
@@ -282,7 +302,8 @@ fn guests_sign_up_while_open() {
         r#"{"display_name":"Visitor","pin":"1357"}"#,
     );
     assert_eq!(r.status, 201, "{}", r.body);
-    assert_eq!(r.json("role"), "guest");
+    // Anyone may join with a PIN (owner, 2026-10-21); guests have no PIN.
+    assert_eq!(r.json("role"), "member");
     let closed = call(
         &app,
         "PATCH",
@@ -474,5 +495,121 @@ fn storage_is_admin_only() {
     assert_eq!(
         call(&app, "GET", "/api/v1/admin/storage", None, "").status,
         401
+    );
+}
+
+/// Owner, 2026-10-21: three ways in. A PIN account (anyone may join), a
+/// guest (a name, no PIN, this browser only) and no account at all.
+#[test]
+fn guests_visitors_and_members() {
+    let app = app();
+    let dad = setup(&app);
+    for (kind, vis, note) in [
+        ("meditation", "public", "sat"),
+        ("chanting", "generic", "chanted"),
+    ] {
+        let body = format!(
+            r#"{{"person":1,"kind":"{kind}","visibility":"{vis}","note":"{note}","client_id":""}}"#
+        );
+        assert_eq!(
+            call(&app, "POST", "/api/v1/entries", Some(&dad), &body).status,
+            201
+        );
+    }
+
+    // Anyone can make a PIN account: a member.
+    let aunt = call(
+        &app,
+        "POST",
+        "/api/v1/auth/signup",
+        None,
+        r#"{"display_name":"Aunt May","pin":"5678"}"#,
+    );
+    assert_eq!(aunt.status, 201, "{}", aunt.body);
+    assert_eq!(aunt.json("role"), "member");
+
+    // Two guests, two accounts, no PINs.
+    let ana = call(
+        &app,
+        "POST",
+        "/api/v1/auth/guest",
+        None,
+        r#"{"display_name":"Ana"}"#,
+    );
+    assert_eq!(ana.status, 201, "{}", ana.body);
+    assert_eq!(ana.json("role"), "guest");
+    let ana = ana.cookie.unwrap();
+    let bo = call(
+        &app,
+        "POST",
+        "/api/v1/auth/guest",
+        None,
+        r#"{"display_name":"Bo"}"#,
+    );
+    let bo = bo.cookie.unwrap();
+    assert_ne!(
+        call(&app, "GET", "/api/v1/me", Some(&ana), "").json("id"),
+        call(&app, "GET", "/api/v1/me", Some(&bo), "").json("id")
+    );
+    assert_eq!(
+        call(
+            &app,
+            "POST",
+            "/api/v1/auth/guest",
+            None,
+            r#"{"display_name":""}"#
+        )
+        .status,
+        400
+    );
+
+    // Guests and visitors see what's public, not generic household detail.
+    for cookie in [Some(ana.as_str()), None] {
+        let feed = call(&app, "GET", "/api/v1/feed", cookie, "").body;
+        assert!(
+            feed.contains("\"sat\"") && !feed.contains("chanted"),
+            "{feed}"
+        );
+        assert!(!feed.contains("\"visibility\":\"generic\""), "{feed}");
+    }
+    let members = call(&app, "GET", "/api/v1/feed", Some(&dad), "").body;
+    assert!(
+        members.contains("chant") || members.contains("generic"),
+        "{members}"
+    );
+
+    // Visitors read the dharma side; writing needs an account.
+    for path in [
+        "/api/v1/kinds",
+        "/api/v1/timers",
+        "/api/v1/shelf",
+        "/api/v1/practices",
+        "/api/v1/texts",
+        "/api/v1/precepts",
+    ] {
+        assert_eq!(call(&app, "GET", path, None, "").status, 200, "{path}");
+    }
+    let mine = r#"{"person":0,"kind":"meditation","client_id":""}"#;
+    assert_eq!(
+        call(&app, "POST", "/api/v1/entries", None, mine).status,
+        401
+    );
+    // A guest logs their own practice.
+    let ana_id = call(&app, "GET", "/api/v1/me", Some(&ana), "").json("id");
+    let own = format!(r#"{{"person":{ana_id},"kind":"meditation","client_id":""}}"#);
+    assert_eq!(
+        call(&app, "POST", "/api/v1/entries", Some(&ana), &own).status,
+        201
+    );
+
+    // Leaving ends the visit: the guest is gone, with their log.
+    assert_eq!(
+        call(&app, "POST", "/api/v1/auth/logout", Some(&ana), "").status,
+        200
+    );
+    let people = call(&app, "GET", "/api/v1/people", Some(&dad), "").body;
+    assert!(
+        !people.contains("\"Ana\"") && people.contains("\"Bo\""),
+        "{people}"
     );
 }

@@ -380,6 +380,7 @@ mod tests {
             Viewer {
                 id: dad,
                 admin: false,
+                outsider: false,
             },
             dad,
         );
@@ -416,6 +417,7 @@ mod tests {
             Viewer {
                 id: kid,
                 admin: false,
+                outsider: false,
             },
             dad,
         );
@@ -427,7 +429,8 @@ mod tests {
             s.precepts_of(
                 Viewer {
                     id: 0,
-                    admin: false
+                    admin: false,
+                    outsider: false
                 },
                 dad
             )
@@ -438,7 +441,8 @@ mod tests {
             s.precepts_of(
                 Viewer {
                     id: kid,
-                    admin: true
+                    admin: true,
+                    outsider: false
                 },
                 dad
             )

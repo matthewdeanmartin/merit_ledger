@@ -54,6 +54,28 @@ For UI work, run `make run` in one shell and `make web-dev` in another. The seco
 http://localhost:4200 with hot reload, and proxies `/api` to :8089.
 
 `make check` is the full gate: tests, fmt, clippy `-D warnings`, and a production UI build.
+GitHub runs it too (`.github/workflows/v2.yml`, which checks out `microcontroller` alongside).
+
+## Testing
+
+- **Property tests**, which work like Python's Hypothesis. `meritledger_rs/tests/props.rs` (proptest)
+  and `meritledger_ui/src/app/props.test.ts` (fast-check) state rules that must hold for *every*
+  input, and let the generator hunt for a counterexample:
+  - Requests: any route, method or body; never a 5xx, and the state survives a reboot.
+  - Damaged snapshots: the board refuses or boots, never crashes.
+  - Uploaded texts: they never render a tag outside the safe subset.
+  - Time zones, the lunar calendar, text fitting on the screen and the touch menu.
+
+  They run in `make test` at a few hundred cases each. `make fuzz` searches 20,000 per rule
+  (`CASES=` to change). Failures it finds are saved in `tests/props.proptest-regressions`, so
+  commit that file.
+- **`unsafe`:** the library and the desktop binary `#![forbid(unsafe_code)]`. The firmware's only
+  `unsafe` is FFI: the screen driver, wrapped in one `Panel` type, and FAT free space.
+- **Tools** (`uv run tools/<name>.py`):
+  - `display_mockups.py`: every screen card and menu, drawn by the firmware's renderer, written to
+    `spec/display/`.
+  - `a11y_walk.py`: axe-core (WCAG 2.1 AA) on every page, light and dark, in Edge.
+  - `load_walk.py`: four phones at a morning sit, with latency and heap.
 
 ## On the board
 
@@ -66,6 +88,22 @@ make board-check PORT=COM5   # read-only identity check
 make update PORT=COM5        # app-only update; keeps everyone's data
 ```
 
+A one-page guide for the household is in the app at `/guide` (linked in the footer), and it
+prints on one sheet.
+
+## Credits
+
+- **The bells** have no recordings to credit. Each phone synthesizes them with the Web Audio API
+  (`meritledger_ui/src/app/bell.ts`). A strike is a few sine partials at inharmonic ratios, each
+  fading at its own rate. The ratios approximate published measurements of singing bowls and
+  handbells; Thomas Rossing's work on the acoustics of bells is the classic source.
+- **The screen's font** is Atkinson Hyperlegible (Braille Institute), SIL Open Font License
+  (`meritledger_rs/fonts/OFL.txt`).
+- **The screen's JD9853 init sequence** comes from CircuitPython's port for this board (MIT,
+  © 2025 natheihei).
+- **Precept and liturgy texts** are from CBETA (Taipei), CC BY-NC-SA 4.0. See
+  [docs/precepts/](docs/precepts/README.md).
+
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT, except as noted under Credits. See [LICENSE](LICENSE).

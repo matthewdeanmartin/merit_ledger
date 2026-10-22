@@ -5,10 +5,10 @@
   --text: #2a241c;
   --muted: #6f665a;
   --line: #e5ddcd;
-  --accent: #a8641a;
+  --accent: #935814; /* 5:1 on --bg (WCAG AA; a11y walk) */
   --accent-text: #ffffff;
   --error: #b3261e;
-  --ok: #4f7a3a;
+  --ok: #466d33;
   color-scheme: light dark;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
@@ -133,7 +133,7 @@ a.button.small { min-height: 36px; padding: 0.2rem 0.75rem; font-size: 0.9rem; }
 .entries li form { flex: 1; }
 .entries .what { flex: 1; display: grid; gap: 0.1rem; }
 .entries .note { font-size: 0.85rem; }
-button.danger { color: var(--error); border-color: var(--error); }
+button.danger { background: transparent; color: var(--error); border-color: var(--error); }
 
 /* Practices. */
 .pins, .kinds { padding: 0; margin: 0; display: grid; }

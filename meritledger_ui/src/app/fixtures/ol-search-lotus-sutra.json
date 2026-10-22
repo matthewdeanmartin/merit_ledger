@@ -1,0 +1,54 @@
+{
+ "numFound": 284,
+ "start": 0,
+ "numFoundExact": true,
+ "num_found": 284,
+ "documentation_url": "https://openlibrary.org/dev/docs/api/search",
+ "q": "lotus sutra",
+ "offset": null,
+ "docs": [
+  {
+   "author_name": [
+    "Tsugunari Kubo",
+    "Akira Yuyama"
+   ],
+   "cover_i": 5020364,
+   "first_publish_year": 2007,
+   "isbn": [
+    "1886439397",
+    "9781886439399"
+   ],
+   "key": "/works/OL19812913W",
+   "number_of_pages_median": 362,
+   "title": "The Lotus Sutra"
+  },
+  {
+   "author_name": [
+    "Shinjō Suguro"
+   ],
+   "cover_i": 667816,
+   "first_publish_year": 1998,
+   "isbn": [
+    "0875730787",
+    "9780875730783"
+   ],
+   "key": "/works/OL1862540W",
+   "number_of_pages_median": 230,
+   "title": "Introduction to the Lotus Sutra"
+  },
+  {
+   "author_name": [
+    "Burton Watson"
+   ],
+   "cover_i": 8333854,
+   "first_publish_year": 1993,
+   "isbn": [
+    "9780231081610",
+    "0231081618"
+   ],
+   "key": "/works/OL18172107W",
+   "number_of_pages_median": 372,
+   "title": "The Lotus Sutra"
+  }
+ ]
+}

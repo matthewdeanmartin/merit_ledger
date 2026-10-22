@@ -4,6 +4,9 @@
 //! Values are never printed.
 use std::path::{Path, PathBuf};
 
+#[path = "fonts.rs"]
+mod fonts;
+
 /// Reads `KEY=value` / `KEY = "value"` lines (comments, optional `export`,
 /// quotes).
 fn parse(text: &str, want: &str) -> Option<String> {
@@ -52,11 +55,20 @@ fn aliases(key: &str) -> &'static [&'static str] {
         "MERITLEDGER_HOSTNAME" => &["MERITLEDGER_HOSTNAME"],
         "MERITLEDGER_BUILD" => &["MERITLEDGER_BUILD"],
         "MERITLEDGER_SETUP_CODE" => &["MERITLEDGER_SETUP_CODE"],
+        // A Brevo *API* key (xkeysib-...), not an SMTP key.
+        "MERITLEDGER_BREVO_API_KEY" => &[
+            "MERITLEDGER_BREVO_API_KEY",
+            "BREVO_API_KEY",
+            "BREVO_OTHER_KEY",
+        ],
+        "MERITLEDGER_MAIL_FROM" => &["MERITLEDGER_MAIL_FROM", "BREVO_SENDER"],
         _ => &[],
     }
 }
 
-const KEYS: [&str; 5] = [
+const KEYS: [&str; 7] = [
+    "MERITLEDGER_BREVO_API_KEY",
+    "MERITLEDGER_MAIL_FROM",
     "MERITLEDGER_SETUP_CODE",
     "MERITLEDGER_WIFI_SSID",
     "MERITLEDGER_WIFI_PASSWORD",
@@ -68,6 +80,10 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     let root = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     let out = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    // Glyph atlases for the board's screen (also used by the desktop's
+    // preview of it).
+    println!("cargo:rerun-if-changed=fonts.rs");
+    fonts::generate(&root, &out);
 
     // The TLS certificate follows the hostname: certs/<host>.crt/.key
     // (`make certs`). Plain-HTTP builds still compile the paths, so copy

@@ -55,8 +55,7 @@ interface Logged {
           @for (tile of t.tiles; track tile.key) {
             <li>
               <button type="button" class="ptile" [class.done]="tile.count > 0" [class.demerit]="tile.polarity === 'demerit'"
-                [disabled]="busy()" (click)="tap(tile)"
-                [attr.aria-label]="tile.name + ', ' + label(tile)">
+                [disabled]="busy()" (click)="tap(tile)">
                 <span class="icon" aria-hidden="true">{{ tile.icon }}</span>
                 <span class="name">{{ tile.name }}</span>
                 <span class="sub">{{ label(tile) }}</span>

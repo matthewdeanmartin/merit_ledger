@@ -1,6 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Api, EntryView, Person, problem } from '../api';
+import { Api, CallView, EntryView, Person, problem } from '../api';
+import { ContentApi } from '../content-api';
+import { coverUrl, progress, ReadingView } from '../books';
 import { EntryItem } from '../entry-item';
 import { initials } from '../people';
 
@@ -8,6 +10,11 @@ import { initials } from '../people';
 @Component({
   selector: 'ml-house',
   imports: [RouterLink, EntryItem],
+  styles: `
+    .shelf { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+    .shelf li { display: flex; gap: 0.6rem; align-items: center; }
+    .shelf img { width: 2.5rem; height: 3.6rem; object-fit: cover; border-radius: 0.2rem; }
+  `,
   template: `
     <h1>The house</h1>
     @if (error()) { <p class="error card" role="alert">{{ error() }}</p> }
@@ -21,6 +28,43 @@ import { initials } from '../people';
         </li>
       }
     </ul>
+    @if (api.me(); as me) {
+      <section class="card">
+        <h2>Call to practice</h2>
+        @for (c of calls(); track c.id) {
+          <p>📣 <strong>{{ c.by_name }}</strong>{{ c.message ? ': ' + c.message : ' calls everyone to practice' }}{{ c.when ? ' (' + c.when + ')' : '' }}
+            <span class="muted small"> · {{ ago(c.created) }}</span></p>
+        }
+        @if (me.role !== 'guest') {
+          @if (!calling()) {
+            <button type="button" (click)="calling.set(true)">📣 Call everyone</button>
+          } @else {
+            <form (submit)="call($event)">
+              <label>Message (optional) <input maxlength="200" [value]="message()" (input)="message.set(v($event))" placeholder="Dinner's ready, then chanting" /></label>
+              <label>When (optional) <input maxlength="40" [value]="when()" (input)="when.set(v($event))" placeholder="now, at 7…" /></label>
+              <p class="muted small">Everyone in the house gets it in their bell and, if they've added their Mastodon handle, as a DM. It shows on the board's screen too.</p>
+              <div class="row">
+                <button type="submit" [disabled]="busy()">Call</button>
+                <button type="button" class="secondary" (click)="calling.set(false)">Cancel</button>
+              </div>
+            </form>
+          }
+        }
+      </section>
+    }
+    @if (shelf().length) {
+      <section class="card">
+        <h2>The house is reading</h2>
+        <ul class="shelf">
+          @for (b of shelf(); track b.id) {
+            <li>
+              @if (b.cover) { <img [src]="cover(b.cover)" alt="" loading="lazy" /> }
+              <span><strong>{{ b.title }}</strong><br /><span class="muted small">{{ b.person_name }} · {{ progress(b.page, b.pages) }}</span></span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
     <section class="card">
       <h2>Recently</h2>
       <ul class="entries">
@@ -37,7 +81,16 @@ import { initials } from '../people';
   `,
 })
 export class House implements OnInit {
-  private readonly api = inject(Api);
+  readonly api = inject(Api);
+  private readonly content = inject(ContentApi);
+  readonly calls = signal<CallView[]>([]);
+  readonly shelf = signal<ReadingView[]>([]);
+  readonly cover = coverUrl;
+  readonly progress = progress;
+  readonly calling = signal(false);
+  readonly message = signal('');
+  readonly when = signal('');
+  readonly v = (event: Event) => (event.target as HTMLInputElement).value;
   readonly people = signal<Person[]>([]);
   readonly entries = signal<EntryView[]>([]);
   readonly more = signal(false);
@@ -47,16 +100,35 @@ export class House implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.attempt(async () => {
-      const [people, feed] = await Promise.all([this.api.people(), this.api.feed()]);
+      const [people, feed] = await Promise.all([this.api.people(), this.content.feed()]);
       this.people.set(people);
       this.entries.set(feed.entries);
       this.more.set(feed.more);
+      if (this.api.me()) {
+        this.calls.set(await this.content.calls());
+        this.shelf.set((await this.api.get<{ books: ReadingView[] }>('/api/v1/shelf', 'ReadingList')).books);
+      }
     });
+  }
+
+  async call(event: Event): Promise<void> {
+    event.preventDefault();
+    await this.attempt(async () => {
+      this.calls.set(await this.content.callToService(this.message(), this.when()));
+      this.message.set('');
+      this.when.set('');
+      this.calling.set(false);
+    });
+  }
+
+  ago(t: number): string {
+    const m = Math.max(0, Math.floor((Date.now() / 1000 - t) / 60));
+    return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ago`;
   }
 
   async loadMore(): Promise<void> {
     await this.attempt(async () => {
-      const feed = await this.api.feed(this.entries().length);
+      const feed = await this.content.feed(this.entries().length);
       this.entries.update((old) => [...old, ...feed.entries]);
       this.more.set(feed.more);
     });
