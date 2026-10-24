@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ContentApi } from '../content-api';
 import { Api, PracticeStep, PracticeView, problem } from '../api';
 import { pageIndex, pageUrl, practicePages, stepAmount, stepHeading, stepKind } from '../practice-doc';
+import { TimerPage } from './timer-page';
 import { TextLibrary } from '../text-library';
 import { blockHtml, TextMeta, toHtml } from '../texts';
 
@@ -13,7 +14,7 @@ import { blockHtml, TextMeta, toHtml } from '../texts';
  */
 @Component({
   selector: 'ml-follow',
-  imports: [RouterLink],
+  imports: [RouterLink, TimerPage],
   styles: `
     :host { display: block; }
     .reader { font-size: 1.35rem; line-height: 1.6; padding-bottom: 6rem; }
@@ -78,7 +79,7 @@ import { blockHtml, TextMeta, toHtml } from '../texts';
               @if (details(s)) { <p class="details">{{ details(s) }}</p> }
               @if (s.note) { <p>{{ s.note }}</p> }
               @if (s.timer && api.me()) {
-                <p><a class="button" [routerLink]="['/timer']" [queryParams]="{ from: s.timer }">Open the timer</a></p>
+                <section class="practice-timer" (touchstart)="$event.stopPropagation()" (touchend)="$event.stopPropagation()" (keydown)="$event.stopPropagation()"><ml-timer [from]="s.timer" [embedded]="true" /></section>
               }
             }
             @for (b of p.blocks; track $index) { <div [innerHTML]="html(b)"></div> }
@@ -209,7 +210,7 @@ export class Follow implements OnDestroy {
   }
 
   key(e: KeyboardEvent): void {
-    if (this.printing() || (e.target as HTMLElement).closest('input, textarea, select')) return;
+    if (this.printing() || (e.target as HTMLElement).closest('input, textarea, select, button, a, ml-timer')) return;
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
       e.preventDefault();
       this.go(this.index() + 1);

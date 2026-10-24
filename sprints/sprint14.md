@@ -108,3 +108,24 @@ non-urgent commits (notifications read, sessions), as gamematcher does.
   found, retried first on every run.
 - **Answer the three questions above.** OTA, push and a `wifi-setup` build are deferred until
   then.
+
+### Household feedback, 2026-10-21
+
+Local changes: role/person selects bind each rendered option; Today adopts the returned person
+and prevents overlapping person changes/claims. New events exclude guest accounts from default
+invitees. Practice documents embed the existing timer/counter; custom practice tiles can be edited
+and have a searchable native emoji palette. Appearance follows Nanacoin's browser-stored palettes.
+Book covers distinguish loading, missing metadata and load failure. Calendar has a download/import
+option: the live Chinese feed contains Guanyin's 2026-10-28 observance, so no lunar calculation change
+was needed for the Chromebook report.
+
+Calls to practice now prepare email as well as DMs, respecting channel opt-outs. Their response
+reports missing channels/recipient addresses and points to delivery status. Real delivery remains
+an owner check; no external messages were sent. The caller remains excluded. Arbitrary public
+Mastodon hostnames can be entered for sign-in/linking; miniframework's bounded OAuth flights now
+accept an app-validated provider without altering concurrent flights or household CA trust.
+
+Validation: `make check`; browser regression against isolated localhost data
+(`tools/household_regression.cjs`, uses the workspace's Mawkingbird Playwright installation).
+No firmware flash performed. The broader miniframework gate is blocked by the wheels-only
+requirement: esptool 4.12.0 has no binary distribution; focused OAuth tests and clippy pass.

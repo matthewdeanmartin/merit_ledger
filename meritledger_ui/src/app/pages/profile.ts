@@ -1,3 +1,4 @@
+import { Theme, THEMES, ThemeId } from '../theme';
 import { Component, inject, OnInit, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Api, Reminder, ReminderInput, problem } from '../api';
@@ -19,6 +20,15 @@ function value(event: Event): string {
     fieldset { border: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0 0.75rem; }
   `,
   template: `
+    <section class="card narrow">
+      <h2>Appearance</h2>
+      <label>Colors and background
+        <select [value]="theme.current()" (change)="setTheme(v($event))">
+          @for (t of themes; track t.id) { <option [value]="t.id" [selected]="t.id === theme.current()">{{ t.label }}</option> }
+        </select>
+      </label>
+      <p class="muted small">Saved on this browser.</p>
+    </section>
     @if (api.me(); as me) {
       <section class="card narrow">
         <h1>{{ me.display_name }}</h1>
@@ -87,6 +97,10 @@ function value(event: Event): string {
               <span class="muted small">This board has no Mastodon sign-in.</span>
             }
           </div>
+        }
+        @if (!me.linked) {
+          <label>Mastodon server <input placeholder="mastodon.social" [value]="otherServer()" (input)="otherServer.set(v($event))" /></label>
+          <button type="button" class="secondary" [disabled]="busy() || !otherServer().trim()" (click)="link(otherServer())">Link another server</button>
         }
         @if (mastodonError()) { <p class="error" role="alert">{{ mastodonError() }}</p> }
       </section>
@@ -173,6 +187,10 @@ function value(event: Event): string {
   `,
 })
 export class Profile implements OnInit {
+  readonly otherServer = signal('');
+  readonly theme = inject(Theme);
+  readonly themes = THEMES;
+  setTheme(id: string): void { this.theme.set(id as ThemeId); }
   readonly api = inject(Api);
   private readonly content = inject(ContentApi);
   readonly mastodon = signal('');

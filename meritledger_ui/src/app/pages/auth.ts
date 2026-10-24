@@ -91,6 +91,8 @@ export class Setup {
           </div>
         }
         }
+        <label>Mastodon server <input placeholder="mastodon.social" [value]="otherServer()" (input)="otherServer.set(v($event))" /></label>
+        <button type="button" class="secondary" [disabled]="busy() || !otherServer().trim()" (click)="mastodon(otherServer())">Sign in with another server</button>
         @if (api.status()?.signup_open) {
           <h2>Visiting?</h2>
           <p class="muted small">No PIN needed. Your guest account lives on this phone, and it's cleared after
@@ -121,6 +123,7 @@ export class Setup {
   `,
 })
 export class SignIn implements OnInit {
+  readonly otherServer = signal('');
   readonly api = inject(Api);
   readonly providers = signal<ProviderView[]>([]);
   private readonly router = inject(Router);

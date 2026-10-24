@@ -231,3 +231,102 @@ details.advanced summary { cursor: pointer; color: var(--muted); font-size: 0.9r
   main { max-width: none; padding: 0; }
   .card { border: none; box-shadow: none; padding: 0; }
 }
+
+/* Browser-selected palettes, following Nanacoin. */
+:root[data-theme="light"] {
+  --bg: #fbf7f0;
+  --card: #fffdfa;
+  --text: #2a2520;
+  --muted: #6c6257;
+  --line: #e6ded1;
+  --accent: #b8562f;
+  --accent-soft: #f3e2d8;
+  --accent-text: #fff;
+  --ok: #2f6b45;
+  --error: #9a3d2a;
+  --warn-bg: #fdecea;
+  --warn-ink: #8a2418;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #1b1815;
+  --card: #241f1b;
+  --text: #efe7dc;
+  --muted: #a89c8d;
+  --line: #3a332c;
+  --accent: #e08050;
+  --accent-soft: #3a2a21;
+  --accent-text: #1a140b;
+  --ok: #6fbf8e;
+  --error: #e08b76;
+  --warn-bg: #3d211c;
+  --warn-ink: #f0b0a0;
+  color-scheme: dark;
+}
+
+:root[data-theme="garden"] {
+  --bg: #f3f7ef;
+  --card: #fbfdf8;
+  --text: #1f2a1f;
+  --muted: #55655a;
+  --line: #d5e1d0;
+  --accent: #3b7336;
+  --accent-soft: #dcebd5;
+  --accent-text: #fff;
+  --ok: #2d6a43;
+  --error: #9a3d2a;
+  --warn-bg: #fbeae6;
+  --warn-ink: #8a2418;
+  color-scheme: light;
+}
+
+:root[data-theme="night"] {
+  --bg: #10151f;
+  --card: #171e2b;
+  --text: #e4e9f2;
+  --muted: #93a0b5;
+  --line: #2a3446;
+  --accent: #7aa7ff;
+  --accent-soft: #1f2c47;
+  --accent-text: #0b1020;
+  --ok: #6fbf8e;
+  --error: #e8907c;
+  --warn-bg: #3a1f22;
+  --warn-ink: #f3b3a8;
+  color-scheme: dark;
+}
+
+/* Monochrome: no hue at all. Credit and debit still differ in weight of grey,
+ * and amounts always carry their sign, so no meaning rests on colour. */
+:root[data-theme="mono-light"] {
+  --bg: #ffffff;
+  --card: #f7f7f7;
+  --text: #111111;
+  --muted: #595959;
+  --line: #d9d9d9;
+  --accent: #222222;
+  --accent-soft: #ebebeb;
+  --accent-text: #fff;
+  --ok: #111111;
+  --error: #595959;
+  --warn-bg: #ebebeb;
+  --warn-ink: #111111;
+  color-scheme: light;
+}
+
+:root[data-theme="mono-dark"] {
+  --bg: #0e0e0e;
+  --card: #191919;
+  --text: #ededed;
+  --muted: #a6a6a6;
+  --line: #333333;
+  --accent: #e6e6e6;
+  --accent-soft: #2a2a2a;
+  --accent-text: #111111;
+  --ok: #f2f2f2;
+  --error: #a6a6a6;
+  --warn-bg: #2a2a2a;
+  --warn-ink: #f2f2f2;
+  color-scheme: dark;
+}

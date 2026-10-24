@@ -75,6 +75,7 @@ import { dayHeading } from '../practice';
       <p class="muted small">Subscribe to the {{ name(system()) }} calendar. It updates itself; phones on the home
         Wi-Fi can reach it (cloud calendars like Google's can't).</p>
       <p><a class="button secondary" [href]="webcal()">Subscribe</a>
+        <a class="button secondary" [href]="feed()" download>Download .ics</a>
         <span class="muted small"> or copy <code>{{ feed() }}</code></span></p>
     </section>
   `,

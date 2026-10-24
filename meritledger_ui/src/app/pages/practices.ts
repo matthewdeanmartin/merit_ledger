@@ -1,3 +1,4 @@
+import { EmojiPicker } from '../emoji-picker';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ContentApi } from '../content-api';
@@ -11,7 +12,7 @@ function value(event: Event): string {
 /** Which practices are tiles on Today (and in what order), plus your own practices. */
 @Component({
   selector: 'ml-practices',
-  imports: [RouterLink],
+  imports: [RouterLink, EmojiPicker],
   template: `
     <div class="bar">
       <h1>Practices</h1>
@@ -55,6 +56,7 @@ function value(event: Event): string {
                 {{ k.builtin ? '' : k.owner === 0 ? '· household' : '· yours' }}
               </span>
               @if (!k.builtin) {
+                <button type="button" class="link" (click)="edit(k)">Edit</button>
                 <button type="button" class="link" (click)="archive(k)">{{ k.archived ? 'Restore' : 'Archive' }}</button>
               }
             </li>
@@ -64,24 +66,25 @@ function value(event: Event): string {
     }
 
     <section class="card">
-      <h2>Add a practice</h2>
+      <h2>{{ editing() ? 'Edit practice' : 'Add a practice' }}</h2>
       <form (submit)="add($event)">
         <div class="row">
           <label class="grow">Name <input maxlength="32" required [value]="name()" (input)="name.set(v($event))" /></label>
           <label class="narrow-input">Icon <input maxlength="4" placeholder="🍵" [value]="icon()" (input)="icon.set(v($event))" /></label>
         </div>
+        <ml-emoji-picker (picked)="icon.set($event)" />
         <div class="row">
-          <label>Kind
+          <label [hidden]="!!editing()">Kind
             <select [value]="polarity()" (change)="polarity.set($any(v($event)))">
               <option value="merit">Merit</option>
               <option value="demerit">Demerit (private by default)</option>
             </select>
           </label>
-          <label>Category <input maxlength="24" placeholder="ritual" required [value]="category()" (input)="category.set(v($event))" /></label>
+          <label [hidden]="!!editing()">Category <input maxlength="24" placeholder="ritual" required [value]="category()" (input)="category.set(v($event))" /></label>
         </div>
         <div class="row">
           <label>Measured in
-            <select [value]="unit()" (change)="unit.set($any(v($event)))">
+            <select [disabled]="!!editing()" [value]="unit()" (change)="unit.set($any(v($event)))">
               <option value="minutes">minutes</option>
               <option value="count">a count</option>
               <option value="once">just done / not done</option>
@@ -91,10 +94,11 @@ function value(event: Event): string {
             <label>One tap records <input type="number" min="1" inputmode="numeric" [value]="amount()" (input)="amount.set(+v($event))" /></label>
           }
         </div>
-        @if (!guest()) {
+        @if (!guest() && !editing()) {
           <label class="check"><input type="checkbox" [checked]="household()" (change)="household.set(!household())" /> For the whole household (otherwise just you)</label>
         }
-        <button type="submit" [disabled]="busy()">Add</button>
+        <button type="submit" [disabled]="busy()">{{ editing() ? 'Save' : 'Add' }}</button>
+        @if (editing()) { <button type="button" class="secondary" (click)="editing.set(null)">Cancel</button> }
       </form>
     </section>
   `,
@@ -102,6 +106,7 @@ function value(event: Event): string {
 export class Practices implements OnInit {
   readonly api = inject(Api);
   private readonly content = inject(ContentApi);
+  readonly editing = signal<KindView | null>(null);
   readonly kinds = signal<KindView[]>([]);
   readonly pins = signal<string[]>([]);
   readonly error = signal('');
@@ -143,6 +148,17 @@ export class Practices implements OnInit {
     await this.attempt(async () => this.load(await this.content.updateKind(k.key, { archived: !k.archived })));
   }
 
+  edit(k: KindView): void {
+    this.editing.set(k);
+    this.name.set(k.name);
+    this.icon.set(k.icon);
+    this.polarity.set(k.polarity);
+    this.category.set(k.category);
+    this.unit.set(k.unit);
+    this.amount.set(k.default_amount);
+    this.household.set(k.owner === 0);
+  }
+
   async add(event: Event): Promise<void> {
     event.preventDefault();
     const input: KindInput = {
@@ -156,6 +172,16 @@ export class Practices implements OnInit {
       household: this.household() && !this.guest(),
     };
     await this.attempt(async () => {
+      const editing = this.editing();
+      if (editing) {
+        await this.load(await this.content.updateKind(editing.key, {
+          name: input.name, icon: input.icon, default_amount: input.default_amount,
+        }));
+        this.editing.set(null);
+        this.name.set('');
+        this.icon.set('');
+        return;
+      }
       const kinds = await this.content.addKind(input);
       // Pin the new one so it's on Today right away.
       const added = kinds.filter((k) => !k.builtin).sort((a, b) => +b.key.slice(1) - +a.key.slice(1))[0];

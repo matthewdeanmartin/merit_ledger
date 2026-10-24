@@ -183,18 +183,25 @@ impl State {
                 .map(|n| (p.clone(), self.notification_view(n)))
         });
         if let Some((p, view)) = n {
-            if kind == REMINDER {
-                if !p.email.is_empty() && !p.email_off {
-                    self.deliveries.push(Delivery {
-                        channel: "email",
-                        to: p.email.clone(),
-                        name: p.display_name.clone(),
-                        subject: format!("Reminder: {}", view.text),
-                        text: format!("{},\n\n{}", p.display_name, view.text),
-                        link: view.link,
-                    });
-                }
-            } else if !p.mastodon.is_empty() && !p.dm_off {
+            if (kind == REMINDER || kind == CALL) && !p.email.is_empty() && !p.email_off {
+                self.deliveries.push(Delivery {
+                    channel: "email",
+                    to: p.email.clone(),
+                    name: p.display_name.clone(),
+                    subject: format!(
+                        "{}: {}",
+                        if kind == CALL {
+                            "Call to practice"
+                        } else {
+                            "Reminder"
+                        },
+                        view.text
+                    ),
+                    text: format!("{},\n\n{}", p.display_name, view.text),
+                    link: view.link.clone(),
+                });
+            }
+            if kind != REMINDER && !p.mastodon.is_empty() && !p.dm_off {
                 self.deliveries.push(Delivery {
                     channel: "dm",
                     to: p.mastodon.clone(),
@@ -766,7 +773,9 @@ mod tests {
         let (mut s, dad, kid) = state();
         s.person_mut(kid).unwrap().dm_off = true;
         s.notify(kid, CALL, 1, dad, "Come and chant", 1);
-        assert!(s.deliveries.is_empty());
+        assert_eq!(s.deliveries.len(), 1);
+        assert_eq!(s.deliveries[0].channel, "email");
+        s.deliveries.clear();
         s.notify(kid, REMINDER, 0, 0, "Sit", 2);
         assert_eq!(s.deliveries.len(), 1);
         assert_eq!(s.deliveries[0].channel, "email");
@@ -785,6 +794,10 @@ mod tests {
             to: vec![],
         };
         assert_eq!(s.call_to_service(me(dad), &input, 1_000).unwrap(), 1);
+        assert_eq!(
+            s.deliveries.iter().map(|d| d.channel).collect::<Vec<_>>(),
+            vec!["email", "dm"]
+        );
         let (list, unread) = s.notifications_of(kid);
         assert_eq!(unread, 1);
         assert_eq!(list[0].text, "Dad: Dinner, then chanting (at 7)");

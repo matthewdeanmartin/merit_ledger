@@ -167,7 +167,7 @@ fn a_call_to_service_reaches_the_bell_and_mastodon() {
             "PATCH",
             "/api/v1/me",
             Some(&kid),
-            r#"{"mastodon":"kid@mastomini.local"}"#,
+            r#"{"mastodon":"kid@mastomini.local","email":"kid@example.com"}"#,
         ),
         200,
     );
@@ -190,6 +190,7 @@ fn a_call_to_service_reaches_the_bell_and_mastodon() {
         201,
     );
     assert!(calls.contains("Come and chant"), "{calls}");
+    assert!(calls.contains("delivery_notes"));
     let summary = ok(call(&app, "GET", "/api/v1/me/summary", Some(&kid), ""), 200);
     assert!(summary.contains(r#""unread":1"#), "{summary}");
     let bell = ok(
@@ -199,6 +200,9 @@ fn a_call_to_service_reaches_the_bell_and_mastodon() {
     assert!(bell.contains("Dad: Come and chant (at 7)"), "{bell}");
     drain(&outbox);
     let sent = sink.sent.lock().unwrap();
+    assert!(sent.iter().any(|(url, body)| url.ends_with("/smtp/email")
+        && body.contains("kid@example.com")
+        && body.contains("Come and chant")));
     let (url, body) = sent.last().unwrap();
     assert_eq!(url, "https://mastomini.local/api/v1/statuses");
     assert!(

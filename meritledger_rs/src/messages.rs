@@ -1519,6 +1519,7 @@ message! {
     /// `GET /api/v1/calls`: recent calls to service.
     pub struct CallList {
         1 calls: Vec<CallView>,
+        2 delivery_notes: Vec<String>,
     }
 }
 

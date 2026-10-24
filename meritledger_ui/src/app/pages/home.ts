@@ -28,9 +28,9 @@ interface Logged {
           <h1>{{ view() ? heading(view()!.date) : 'Today' }}</h1>
           @if (people().length > 1 && !guest()) {
             <label class="for">For
-              <select [value]="person()" (change)="choose(+v($event))">
+              <select [disabled]="busy()" [value]="person()" (change)="choose(+v($event))">
                 @for (p of people(); track p.id) {
-                  <option [value]="p.id">{{ p.id === api.me()?.id ? 'me (' + p.display_name + ')' : p.display_name }}</option>
+                  <option [value]="p.id" [selected]="p.id === person()">{{ p.id === api.me()?.id ? 'me (' + p.display_name + ')' : p.display_name }}</option>
                 }
               </select>
             </label>
@@ -154,6 +154,7 @@ export class Home implements OnInit, OnDestroy {
     await this.attempt(async () => {
       const [view, people] = await Promise.all([this.api.today(), this.api.people()]);
       this.view.set(view);
+      this.person.set(view.person);
       this.people.set(people);
     });
   }
@@ -167,13 +168,20 @@ export class Home implements OnInit, OnDestroy {
   }
 
   async choose(person: number): Promise<void> {
+    if (this.busy()) return;
     this.person.set(person);
+    this.view.set(null);
     this.logged.set(null);
     this.editing.set(null);
-    await this.attempt(async () => this.view.set(await this.api.today(person)));
+    await this.attempt(async () => {
+      const view = await this.api.today(person);
+      this.view.set(view);
+      this.person.set(view.person);
+    });
   }
 
   async tap(tile: Tile): Promise<void> {
+    if (this.busy()) return;
     await this.attempt(async () => {
       const view = await this.api.record(this.person(), tile.key);
       this.view.set(view);

@@ -84,6 +84,38 @@ pub fn default_instances() -> Vec<miniframework::oauth::Provider> {
         },
     ]
 }
+/// A user-entered public Mastodon hostname. Household providers keep their explicit trust.
+pub(crate) fn public_provider(raw: &str) -> Result<miniframework::oauth::Provider, ApiError> {
+    let host = raw
+        .trim()
+        .trim_start_matches("https://")
+        .trim_end_matches('/')
+        .to_ascii_lowercase();
+    if host.len() > 253
+        || !host.contains('.')
+        || host.ends_with(".local")
+        || host.parse::<std::net::IpAddr>().is_ok()
+        || host.split('.').any(|label| {
+            label.is_empty()
+                || label.len() > 63
+                || label.starts_with('-')
+                || label.ends_with('-')
+                || !label
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
+    {
+        return Err(ApiError::bad_request(
+            "Enter a public Mastodon server name, such as mastodon.social",
+        ));
+    }
+    Ok(miniframework::oauth::Provider {
+        id: host.clone(),
+        base: format!("https://{host}"),
+        trust: miniframework::oauth::Trust::Public,
+    })
+}
+
 /// Vow post bodies, `<id>.md`.
 const POSTS_DIR: &str = "ml/posts";
 /// Household text bodies, `<id>.md`.
@@ -1901,14 +1933,34 @@ impl App {
             ("GET", "/api/v1/calls") => {
                 self.caller(req)?;
                 let calls = self.lock().state.recent_calls(now());
-                reply.wire(req, &CallList { calls });
+                reply.wire(
+                    req,
+                    &CallList {
+                        calls,
+                        delivery_notes: Vec::new(),
+                    },
+                );
             }
             ("POST", "/api/v1/call") => {
                 let c = self.caller(req)?;
                 let body: CallInput = req.decode()?;
                 let room = self.outbox.as_ref().map(|o| o.room());
+                let mut delivery_notes = Vec::new();
                 let calls = self.mutate(|inner| {
                     inner.state.call_to_service(c.actor(), &body, stamp()?)?;
+                    for (channel, label, ready) in [
+                        ("dm", "Mastodon DM", self.outbox.as_ref().is_some_and(|o| o.bot_ready())),
+                        ("email", "Email", self.outbox.as_ref().is_some_and(|o| o.mail_ready())),
+                    ] {
+                        let count = inner.state.deliveries.iter().filter(|d| d.channel == channel).count();
+                        delivery_notes.push(if count == 0 {
+                            format!("{label}: no recipients have this channel enabled with an address. The caller is excluded.")
+                        } else if !ready {
+                            format!("{label}: not sent; set up this channel in Household → Messages.")
+                        } else {
+                            format!("{label}: enabled for {count} recipient(s). Check delivery status in Household → Messages.")
+                        });
+                    }
                     if let Some(room) = room {
                         if inner.state.deliveries.len() > room {
                             return Err(ApiError::new(
@@ -1920,7 +1972,14 @@ impl App {
                     }
                     Ok(inner.state.recent_calls(now()))
                 })?;
-                reply.wire_status(req, 201, &CallList { calls });
+                reply.wire_status(
+                    req,
+                    201,
+                    &CallList {
+                        calls,
+                        delivery_notes,
+                    },
+                );
             }
             ("GET", "/api/v1/events") => {
                 let c = self.caller(req)?;
@@ -2444,7 +2503,10 @@ impl App {
                         .iter()
                         .find(|p| p.id == identity.provider)
                         .map(|p| (p.base.clone(), p.trust))
-                        .ok_or_else(|| ApiError::not_found("No such provider"));
+                        .map(Ok)
+                        .unwrap_or_else(|| {
+                            public_provider(&identity.provider).map(|p| (p.base, p.trust))
+                        });
                     base.and_then(|(base, trust)| {
                         self.mutate(|inner| {
                             inner.state.link_identity(
@@ -2523,12 +2585,19 @@ impl App {
                 let oauth = self.oauth()?;
                 let host = req.header("Host").trim();
                 let origin = format!("{}://{host}", if req.secure { "https" } else { "http" });
-                let ticket = if start.link {
-                    let c = self.caller(req)?;
-                    oauth.start_keeping_token(&start.provider, &origin, format!("link:{}", c.id))?
+                let provider = self
+                    .instances
+                    .iter()
+                    .find(|p| p.id == start.provider)
+                    .cloned()
+                    .map(Ok)
+                    .unwrap_or_else(|| public_provider(&start.provider))?;
+                let intent = if start.link {
+                    format!("link:{}", self.caller(req)?.id)
                 } else {
-                    oauth.start(&start.provider, &origin, "login".into())?
+                    "login".into()
                 };
+                let ticket = oauth.start_provider(provider, &origin, intent, start.link)?;
                 reply.header("Set-Cookie", oauth.cookie(&ticket, req.secure));
                 reply.wire(req, &OAuthTicket { ticket });
             }
@@ -3183,5 +3252,31 @@ impl Service for App {
         #[cfg(feature = "gate")]
         schemas.extend([crate::gate::GateStats::SCHEMA, SdTestResult::SCHEMA]);
         schemas
+    }
+}
+
+#[cfg(test)]
+mod public_provider_tests {
+    use super::*;
+    #[test]
+    fn typed_public_servers_preserve_the_household_trust_boundary() {
+        let provider = public_provider(" https://Mastodon.NU/ ").unwrap();
+        assert_eq!(provider.id, "mastodon.nu");
+        assert_eq!(provider.base, "https://mastodon.nu");
+        assert!(matches!(
+            provider.trust,
+            miniframework::oauth::Trust::Public
+        ));
+        for bad in [
+            "http://server.org",
+            "https://user@server.org",
+            "127.0.0.1",
+            "mastomini.local",
+            "server.org/path",
+            "server.org:443",
+            "a..org",
+        ] {
+            assert!(public_provider(bad).is_err(), "{bad}");
+        }
     }
 }

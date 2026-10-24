@@ -27,7 +27,7 @@ function value(event: Event): string {
             <div class="row">
               <label class="small">Role
                 <select [value]="p.role" (change)="update(p, { role: $any(v($event)) })">
-                  @for (r of roles; track r) { <option [value]="r">{{ r }}</option> }
+                  @for (r of roles; track r) { <option [value]="r" [selected]="r === p.role">{{ r }}</option> }
                 </select>
               </label>
               <button type="button" class="secondary small" (click)="setPin(p)">{{ p.has_pin ? 'New PIN' : 'Give a PIN' }}</button>
@@ -52,7 +52,7 @@ function value(event: Event): string {
           <label>Name <input maxlength="32" required [value]="name()" (input)="name.set(v($event))" /></label>
           <label>Role
             <select [value]="role()" (change)="role.set($any(v($event)))">
-              @for (r of roles; track r) { <option [value]="r">{{ r }}</option> }
+              @for (r of roles; track r) { <option [value]="r" [selected]="r === role()">{{ r }}</option> }
             </select>
           </label>
           <label>PIN (optional)

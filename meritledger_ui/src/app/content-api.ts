@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import {
   Api,
   ScreenSettings,
@@ -26,6 +26,7 @@ import type { TimerPreset } from './timer';
  */
 @Injectable({ providedIn: 'root' })
 export class ContentApi {
+  readonly callDeliveryNotes = signal<string[]>([]);
   private readonly api = inject(Api);
 
   // ---- build-a-practice ------------------------------------------------------
@@ -160,7 +161,9 @@ export class ContentApi {
   }
 
   async callToService(message: string, when: string, to: number[] = []): Promise<CallView[]> {
-    return (await this.api.send<{ calls: CallView[] }>('POST', '/api/v1/call', { message, when, to }, 'CallList')).calls;
+    const result = await this.api.send<{ calls: CallView[]; delivery_notes?: string[] }>('POST', '/api/v1/call', { message, when, to }, 'CallList');
+    this.callDeliveryNotes.set(result.delivery_notes ?? []);
+    return result.calls;
   }
 
   async events(): Promise<EventView[]> {

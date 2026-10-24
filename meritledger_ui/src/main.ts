@@ -1,3 +1,4 @@
+import { applyStoredTheme } from './app/theme';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { ErrorHandler, inject, Injectable, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { CanActivateFn, provideRouter, Router, Routes, withComponentInputBinding } from '@angular/router';
@@ -5,6 +6,8 @@ import { Api } from './app/api';
 import { App } from './app/app';
 import { UpdateRecovery } from './app/update-recovery';
 import { Home } from './app/pages/home';
+
+applyStoredTheme();
 
 async function ready(api: Api): Promise<void> {
   if (!api.ready()) await api.refresh();

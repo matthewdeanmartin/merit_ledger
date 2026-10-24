@@ -31,6 +31,7 @@ import { initials } from '../people';
     @if (api.me(); as me) {
       <section class="card">
         <h2>Call to practice</h2>
+        @for (note of deliveryNotes(); track note) { <p class="muted small" role="status">{{ note }}</p> }
         @for (c of calls(); track c.id) {
           <p>📣 <strong>{{ c.by_name }}</strong>{{ c.message ? ': ' + c.message : ' calls everyone to practice' }}{{ c.when ? ' (' + c.when + ')' : '' }}
             <span class="muted small"> · {{ ago(c.created) }}</span></p>
@@ -83,6 +84,7 @@ import { initials } from '../people';
 export class House implements OnInit {
   readonly api = inject(Api);
   private readonly content = inject(ContentApi);
+  readonly deliveryNotes = this.content.callDeliveryNotes;
   readonly calls = signal<CallView[]>([]);
   readonly shelf = signal<ReadingView[]>([]);
   readonly cover = coverUrl;

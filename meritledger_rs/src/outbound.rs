@@ -1010,12 +1010,20 @@ impl Outbox {
         oauth: Option<&miniframework::oauth::OAuth>,
     ) -> Result<Option<Status>, String> {
         if job.op == "revoke" {
-            return match oauth {
-                Some(o) => o
+            let provider = crate::api::default_instances()
+                .into_iter()
+                .find(|p| p.id == job.provider)
+                .or_else(|| crate::api::public_provider(&job.provider).ok());
+            return match (oauth, provider) {
+                (Some(o), Some(provider)) => o
+                    .revoke_provider(&provider, &job.text)
+                    .map(|_| None)
+                    .map_err(|e| e.to_string()),
+                (Some(o), None) => o
                     .revoke(&job.provider, &job.text)
                     .map(|_| None)
                     .map_err(|e| e.to_string()),
-                None => Ok(None),
+                (None, _) => Ok(None),
             };
         }
         let (instance, token, anchor) = if job.account == 0 {

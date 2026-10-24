@@ -38,6 +38,7 @@ function value(event: Event): string {
             <button type="button" (click)="start(t)">Start</button>
           </section>
         }
+        @if (!embedded() || !suggested()) {
         <ul class="presets">
           @for (t of live(); track t.key) {
             <li class="card">
@@ -108,6 +109,7 @@ function value(event: Event): string {
             </div>
           </form>
         </section>
+        }
       }
 
       @case ('run') {
@@ -169,6 +171,7 @@ export class TimerPage implements OnInit, OnDestroy {
   readonly kinds = signal<KindView[]>([]);
   readonly live = computed(() => this.presets().filter((t) => !t.archived));
   /** Query parameter `?from=<preset>`: a practice step's timer, offered first. */
+  readonly embedded = input(false);
   readonly from = input<string>();
   readonly suggested = computed(() => this.live().find((t) => t.key === this.from()) ?? null);
   readonly preset = signal<TimerPreset | null>(null);

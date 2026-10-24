@@ -1,3 +1,4 @@
+import { BookCover } from '../book-cover';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Api, problem } from '../api';
@@ -12,7 +13,7 @@ type ListResponse = { books: ReadingView[] };
 /** `/books`: your reading list, logging reading, and Open Library search. */
 @Component({
   selector: 'ml-books',
-  imports: [RouterLink],
+  imports: [RouterLink, BookCover],
   styles: `
     .books { list-style: none; padding: 0; margin: 0; }
     .books > li { display: flex; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--line); }
@@ -40,7 +41,7 @@ type ListResponse = { books: ReadingView[] };
         <ul class="books">
           @for (h of hits(); track h.work) {
             <li>
-              @if (h.cover) { <img class="cover" [src]="cover(h.cover)" alt="" loading="lazy" /> } @else { <span class="cover"></span> }
+              <ml-book-cover [id]="h.cover" />
               <div class="info">
                 <p><strong>{{ h.title }}</strong></p>
                 <p class="muted small">{{ h.author }}{{ h.year ? ' · ' + h.year : '' }}{{ h.pages ? ' · ' + h.pages + ' pages' : '' }}</p>
@@ -68,7 +69,7 @@ type ListResponse = { books: ReadingView[] };
         <ul class="books">
           @for (b of group.books; track b.id) {
             <li>
-              @if (b.cover) { <img class="cover" [src]="cover(b.cover)" alt="" loading="lazy" /> } @else { <span class="cover"></span> }
+              <ml-book-cover [id]="b.cover" />
               <div class="info">
                 <p><strong>{{ b.title }}</strong>
                   @if (b.work) { <a class="small" [href]="work(b.work)" target="_blank" rel="noopener">↗</a> }</p>

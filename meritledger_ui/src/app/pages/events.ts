@@ -188,7 +188,7 @@ export class Events {
         this.endTime.set('');
         this.place.set('Home');
         this.notes.set('');
-        this.invitees.set(this.others().map((p) => p.id));
+        this.invitees.set(this.others().filter((p) => p.role !== 'guest').map((p) => p.id));
         this.editing.set(true);
         return;
       }

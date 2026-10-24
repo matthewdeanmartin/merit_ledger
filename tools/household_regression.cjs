@@ -1,0 +1,77 @@
+// Run against a throwaway desktop instance, never a live household board.
+const { chromium } = require('../../mimb/mawkingbird/ui/node_modules/playwright');
+const assert = require('node:assert/strict');
+(async () => {
+  const base = process.argv[2] || 'http://127.0.0.1:8098';
+  if (!base.startsWith('http://127.0.0.1:')) throw Error('Use an isolated localhost server');
+  const browser = await chromium.launch({channel:'msedge', headless:true});
+  try {
+    const ctx = await browser.newContext();
+    const status = await (await ctx.request.get(base+'/api/v1/status?fmt=json')).json();
+    assert.equal(status.app, 'meritledger');
+    assert.equal(status.setup_needed, true, 'Use a fresh throwaway state directory');
+    const post = async (path, data) => {
+      const r = await ctx.request.post(base+path, {data, headers:{Origin:base}});
+      assert.ok(r.ok(), `${path}: ${r.status()} ${await r.text()}`);
+      return r;
+    };
+    await post('/api/v1/setup', {display_name:'Matt',pin:'1234',setup_code:''});
+    await post('/api/v1/admin/people',{display_name:'Daughter',role:'member',pin:'1111',email:''});
+    await post('/api/v1/admin/people',{display_name:'Guest',role:'guest',pin:'2222',email:''});
+    const page = await ctx.newPage();
+    await page.goto(base+'/admin');
+    await page.getByText('Daughter',{exact:true}).waitFor();
+    const roles = await page.locator('ul.people select').evaluateAll(els=>els.map(e=>e.value));
+    assert.deepEqual(roles, ['admin','member','guest']);
+    await page.goto(base+'/');
+    const picker = page.locator('select').first();
+    await page.getByRole('heading',{name:'Your day',exact:true}).waitFor();
+    assert.equal(await picker.inputValue(),'1');
+    await picker.selectOption('2');
+    await page.getByRole('heading',{name:"Daughter's day",exact:true}).waitFor();
+    await page.locator('.ptile').first().click();
+    await page.locator('.toast').waitFor();
+    await page.locator('.ptile').nth(1).click();
+    await page.waitForFunction(()=>document.querySelectorAll('ul.entries > li').length===2);
+    assert.equal(await picker.inputValue(),'2');
+    await page.goto(base+'/events/new');
+    await page.getByRole('heading',{name:'Plan an event'}).waitFor();
+    assert.equal(await page.getByLabel('Guest',{exact:true}).isChecked(),false);
+    assert.equal(await page.getByLabel('Daughter',{exact:true}).isChecked(),true);
+    await page.goto(base+'/me');
+    await page.getByLabel('Colors and background').selectOption('garden');
+    await page.reload();
+    assert.equal(await page.locator('html').getAttribute('data-theme'),'garden');
+    // A fresh session must select the logged-in daughter, not the first person.
+    const child = await browser.newContext();
+    await child.request.post(base+'/api/v1/auth/pin',{data:{person:2,pin:'1111'},headers:{Origin:base}});
+    const childPage = await child.newPage();
+    await childPage.goto(base+'/');
+    await childPage.getByRole('heading',{name:'Your day',exact:true}).waitFor();
+    assert.equal(await childPage.locator('select').first().inputValue(),'2');
+    await page.goto(base+'/practices');
+    await page.getByRole('heading',{name:'Add a practice'}).waitFor();
+    await page.getByLabel('Name',{exact:true}).fill('Test practice');
+    await page.getByLabel('Category',{exact:true}).fill('ritual');
+    await page.getByText('Choose an emoji',{exact:true}).click();
+    await page.getByRole('button',{name:'tea',exact:true}).click();
+    await page.getByRole('button',{name:'Add',exact:true}).click();
+    const row=page.locator('li').filter({hasText:'Test practice'}).filter({has:page.getByRole('button',{name:'Edit',exact:true})});
+    await row.getByRole('button',{name:'Edit',exact:true}).click();
+    await page.getByLabel('Name',{exact:true}).fill('Edited practice');
+    await page.getByRole('button',{name:'Save',exact:true}).click();
+    await page.locator('ul.kinds').getByText('🍵 Edited practice',{exact:true}).waitFor();
+    const timers=await (await ctx.request.get(base+'/api/v1/timers?fmt=json')).json();
+    const timer=timers.timers.find(t=>t.count_target>0);
+    const response=await post('/api/v1/practices?fmt=json',{title:'Inline counter',visibility:'public',elements:[{kind:'chant',title:'Daimoku',text:'',minutes:0,count:108,timer:timer.key,logs_as:'chanting',note:'',book:''}]});
+    const doc=await response.json();
+    const practiceUrl=base+'/practice/'+doc.id+'/1';
+    await page.goto(practiceUrl);
+    await page.locator('ml-timer').getByRole('button',{name:'Start',exact:true}).click();
+    await page.locator('ml-timer button.beads').click();
+    await page.locator('ml-timer').getByRole('button',{name:'Finish',exact:true}).click();
+    await page.locator('ml-timer').getByRole('button',{name:'Done',exact:true}).waitFor();
+    assert.equal(page.url(),practiceUrl);
+    console.log('PASS editing, emoji picker, inline counter, roles, default person, switched person, consecutive claims, guest invitation, persisted theme, daughter login');
+  } finally { await browser.close(); }
+})().catch(e=>{console.error(e);process.exitCode=1});
